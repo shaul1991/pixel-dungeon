@@ -18,19 +18,25 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const TILE_SIZE = 16;
-const GRID_SIZE = 2;
-const IMAGE_SIZE = TILE_SIZE * GRID_SIZE;
+const GRID_WIDTH = 3;  // 3열
+const GRID_HEIGHT = 2; // 2행
+const IMAGE_WIDTH = TILE_SIZE * GRID_WIDTH;
+const IMAGE_HEIGHT = TILE_SIZE * GRID_HEIGHT;
 
 // 타일 색상 정의
+// 인덱스: (y * GRID_WIDTH + x) → Tiled에서 firstgid=1이므로 +1
+// 0: floor, 1: wall, 2: door, 3: portal, 4: grass
 const TILES = [
-  { x: 0, y: 0, color: '#555555', name: 'floor' },      // 바닥
-  { x: 1, y: 0, color: '#8B4513', name: 'wall' },       // 벽
-  { x: 0, y: 1, color: '#4169E1', name: 'door' },       // 문
-  { x: 1, y: 1, color: '#9932CC', name: 'portal' },     // 포탈
+  { x: 0, y: 0, color: '#555555', name: 'floor' },      // 바닥 (인덱스 0)
+  { x: 1, y: 0, color: '#8B4513', name: 'wall' },       // 벽 (인덱스 1)
+  { x: 2, y: 0, color: '#4169E1', name: 'door' },       // 문 (인덱스 2)
+  { x: 0, y: 1, color: '#9932CC', name: 'portal' },     // 포탈 (인덱스 3)
+  { x: 1, y: 1, color: '#228B22', name: 'grass' },      // 풀숲 (인덱스 4) - 랜덤 인카운터
+  { x: 2, y: 1, color: '#444444', name: 'empty' },      // 예비 (인덱스 5)
 ];
 
 function generateTileset() {
-  const canvas = createCanvas(IMAGE_SIZE, IMAGE_SIZE);
+  const canvas = createCanvas(IMAGE_WIDTH, IMAGE_HEIGHT);
   const ctx = canvas.getContext('2d');
 
   // 타일 그리기
@@ -67,6 +73,23 @@ function generateTileset() {
       ctx.arc(px + 8, py + 8, 4, 0, Math.PI * 2);
       ctx.fill();
     }
+
+    // 풀숲 타일에 추가 디테일 (풀 패턴)
+    if (tile.name === 'grass') {
+      ctx.fillStyle = lightenColor(tile.color, 20);
+      // 풀잎 패턴
+      for (let i = 0; i < 5; i++) {
+        const gx = px + 2 + (i * 3);
+        const gy = py + 8 + ((i % 2) * 3);
+        ctx.fillRect(gx, gy, 2, 5);
+      }
+      ctx.fillStyle = darkenColor(tile.color, 15);
+      for (let i = 0; i < 4; i++) {
+        const gx = px + 4 + (i * 3);
+        const gy = py + 5 + ((i % 2) * 4);
+        ctx.fillRect(gx, gy, 2, 4);
+      }
+    }
   });
 
   // 출력 디렉토리 확인
@@ -81,8 +104,9 @@ function generateTileset() {
   fs.writeFileSync(outputPath, buffer);
 
   console.log(`Tileset generated: ${outputPath}`);
-  console.log(`Size: ${IMAGE_SIZE}x${IMAGE_SIZE} pixels`);
+  console.log(`Size: ${IMAGE_WIDTH}x${IMAGE_HEIGHT} pixels`);
   console.log(`Tiles: ${TILES.length} (${TILE_SIZE}x${TILE_SIZE} each)`);
+  console.log(`Layout: ${GRID_WIDTH}x${GRID_HEIGHT} grid`);
 }
 
 // 색상 어둡게

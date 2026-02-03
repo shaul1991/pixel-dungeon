@@ -4,9 +4,9 @@ import { Player } from '../entities/Player';
 import type { Direction } from '../entities/Player';
 import { NPC } from '../entities/NPC';
 import type { NPCConfig } from '../entities/NPC';
-import { Monster } from '../entities/Monster';
 import type { MonsterConfig } from '../entities/Monster';
 import { InputController } from '../systems/InputController';
+import { EncounterSystem } from '../systems/EncounterSystem';
 import { DialogBox } from '../ui/DialogBox';
 import type { PlayerData, BattleSceneData } from './BattleScene';
 
@@ -26,6 +26,10 @@ export class GameScene extends Phaser.Scene {
   private map!: Phaser.Tilemaps.Tilemap;
   public groundLayer!: Phaser.Tilemaps.TilemapLayer | null;
   public wallsLayer!: Phaser.Tilemaps.TilemapLayer | null;
+  public grassLayer!: Phaser.Tilemaps.TilemapLayer | null;
+
+  // grass 타일 인덱스 (Tiled firstgid=1, 0-indexed에서 4번째 = 타일맵에서 5)
+  private static readonly GRASS_TILE_INDEX = 5;
 
   // 플레이어 관련
   private player!: Player;
@@ -45,10 +49,8 @@ export class GameScene extends Phaser.Scene {
   private npcs: NPC[] = [];
   private dialogs!: Record<string, string[]>;
 
-  // 몬스터 관련
-  private monsters: Monster[] = [];
+  // 몬스터 데이터 (랜덤 인카운터용)
   private monstersData!: Record<string, MonsterConfig>;
-  // defeatedMonsters는 Registry에 저장하여 씬 재시작 시에도 유지
 
   // 대화창
   private dialogBox!: DialogBox;
@@ -65,13 +67,6 @@ export class GameScene extends Phaser.Scene {
   private savedPlayerPosition: { x: number; y: number } | null = null;
 
   init(data?: BattleResultData): void {
-    // Registry에서 defeatedMonsters 가져오기 (없으면 새로 생성)
-    let defeatedMonsters = this.registry.get('defeatedMonsters') as Set<string> | undefined;
-    if (!defeatedMonsters) {
-      defeatedMonsters = new Set<string>();
-      this.registry.set('defeatedMonsters', defeatedMonsters);
-    }
-
     // 전투 결과 처리
     if (data && data.result) {
       // 플레이어 HP 업데이트
@@ -83,18 +78,8 @@ export class GameScene extends Phaser.Scene {
         y: data.playerTileY,
       };
 
-      if (data.result === 'win') {
-        // 처치된 몬스터 기록 (Registry에 저장)
-        const monsterKey = `${data.monsterTileX},${data.monsterTileY}`;
-        defeatedMonsters.add(monsterKey);
-        this.registry.set('defeatedMonsters', defeatedMonsters);
-
-        // 보상 처리 (추후 확장)
-        if (data.rewards) {
-          console.log(`GameScene: Earned ${data.rewards.exp} EXP, ${data.rewards.gold} Gold`);
-        }
-
-        console.log(`GameScene: Monster at (${data.monsterTileX}, ${data.monsterTileY}) defeated`);
+      if (data.result === 'win' && data.rewards) {
+        console.log(`GameScene: Earned ${data.rewards.exp} EXP, ${data.rewards.gold} Gold`);
       }
     } else {
       // 새 게임 시작 시 초기화
@@ -106,19 +91,17 @@ export class GameScene extends Phaser.Scene {
     console.log('GameScene: Starting game...');
 
     // 배열 초기화 (씬 재시작 시 이전 객체 제거)
-    this.monsters = [];
     this.npcs = [];
 
     // 대화 데이터 로드
     this.dialogs = this.cache.json.get('dialogs');
 
-    // 몬스터 데이터 로드
+    // 몬스터 데이터 로드 (랜덤 인카운터용)
     this.monstersData = this.cache.json.get('monsters');
 
     this.createTilemap();
     this.createPlayer();
     this.createNPCs();
-    this.createMonsters();
     this.setupCamera();
     this.setupInput();
 
@@ -146,6 +129,7 @@ export class GameScene extends Phaser.Scene {
     // 레이어 생성
     this.groundLayer = this.map.createLayer('ground', tileset, 0, 0);
     this.wallsLayer = this.map.createLayer('walls', tileset, 0, 0);
+    this.grassLayer = this.map.createLayer('grass', tileset, 0, 0);
 
     // 벽 레이어에 충돌 설정
     if (this.wallsLayer) {
@@ -154,6 +138,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     console.log('GameScene: Tilemap created successfully');
+    console.log(`GameScene: Grass layer ${this.grassLayer ? 'loaded' : 'not found'}`);
   }
 
   private createPlayer(): void {
@@ -191,9 +176,9 @@ export class GameScene extends Phaser.Scene {
     this.player = new Player(this, spawnTileX, spawnTileY);
     this.player.setWallsLayer(this.wallsLayer);
 
-    // NPC/몬스터 충돌 체크 콜백 설정
+    // NPC 충돌 체크 콜백 설정
     this.player.setCollisionCallback((tileX, tileY) => {
-      return this.isBlockedByEntity(tileX, tileY);
+      return this.findNPCAt(tileX, tileY) !== null;
     });
 
     // InputController 생성
@@ -246,93 +231,6 @@ export class GameScene extends Phaser.Scene {
   private getPropertyValue(props: Array<{ name: string; value: string }>, name: string): string | undefined {
     const prop = props.find((p) => p.name === name);
     return prop?.value;
-  }
-
-  /**
-   * 몬스터 생성
-   */
-  private createMonsters(): void {
-    // Registry에서 defeatedMonsters 가져오기
-    const defeatedMonsters = this.registry.get('defeatedMonsters') as Set<string> || new Set<string>();
-
-    // 슬라임 몬스터를 맵에 배치 (빈 공간에)
-    const monsterPositions = [
-      { x: 2, y: 2 },
-      { x: 7, y: 2 },
-      { x: 2, y: 7 },
-      { x: 7, y: 7 },
-    ];
-
-    const slimeConfig = this.monstersData['slime'];
-
-    if (!slimeConfig) {
-      console.error('GameScene: Slime monster config not found');
-      return;
-    }
-
-    monsterPositions.forEach((pos) => {
-      // 이미 처치된 몬스터는 생성하지 않음 (Registry에서 확인)
-      const monsterKey = `${pos.x},${pos.y}`;
-      if (defeatedMonsters.has(monsterKey)) {
-        console.log(`GameScene: Skipping defeated monster at (${pos.x}, ${pos.y})`);
-        return;
-      }
-
-      // 해당 위치가 벽인지 확인
-      if (this.wallsLayer) {
-        const tile = this.wallsLayer.getTileAt(pos.x, pos.y);
-        if (tile && tile.index !== -1) {
-          return; // 벽이면 스킵
-        }
-      }
-
-      const monster = new Monster(this, pos.x, pos.y, slimeConfig);
-      this.monsters.push(monster);
-      console.log(`GameScene: Monster '${slimeConfig.name}' created at tile (${pos.x}, ${pos.y})`);
-    });
-
-    console.log(`GameScene: ${this.monsters.length} monsters created (${defeatedMonsters.size} defeated)`);
-  }
-
-  /**
-   * 주어진 타일 좌표에 있는 몬스터 찾기
-   */
-  private findMonsterAt(tileX: number, tileY: number): Monster | null {
-    for (const monster of this.monsters) {
-      const pos = monster.getTilePosition();
-      if (pos.x === tileX && pos.y === tileY) {
-        return monster;
-      }
-    }
-    return null;
-  }
-
-  /**
-   * 몬스터와 전투 시작
-   */
-  private startBattle(monster: Monster): void {
-    const monsterPos = monster.getTilePosition();
-    const playerPos = this.player.getTilePosition();
-
-    const battleData: BattleSceneData = {
-      player: { ...this.playerStats },
-      monster: monster.getConfig(),
-      monsterTileX: monsterPos.x,
-      monsterTileY: monsterPos.y,
-      // 플레이어 위치 저장 (전투 후 복원용)
-      playerTileX: playerPos.x,
-      playerTileY: playerPos.y,
-    };
-
-    console.log(`GameScene: Starting battle with ${monster.getStats().name} at player pos (${playerPos.x}, ${playerPos.y})`);
-    this.scene.start('BattleScene', battleData);
-  }
-
-  /**
-   * 주어진 타일 좌표에 NPC 또는 몬스터가 있는지 확인
-   */
-  private isBlockedByEntity(tileX: number, tileY: number): boolean {
-    return this.findNPCAt(tileX, tileY) !== null || this.findMonsterAt(tileX, tileY) !== null;
   }
 
   /**
@@ -451,29 +349,66 @@ export class GameScene extends Phaser.Scene {
     const pos = this.player.getTilePosition();
     const facing = this.player.getFacingTile();
     const facingNpc = this.findNPCAt(facing.x, facing.y);
-    const facingMonster = this.findMonsterAt(facing.x, facing.y);
+    const onGrass = this.isGrassTile(pos.x, pos.y);
 
     this.debugText.setText([
       `Map: ${this.map.width}x${this.map.height} tiles`,
       `Player: (${pos.x}, ${pos.y}) HP: ${this.playerStats.hp}/${this.playerStats.maxHp}`,
       `Facing: (${facing.x}, ${facing.y}) ${this.player.getDirection()}`,
-      `Monsters: ${this.monsters.length}`,
+      onGrass ? '[풀숲] 랜덤 인카운터 가능!' : '',
       facingNpc ? `NPC: ${facingNpc.getName()}` : '',
-      facingMonster ? `Monster: ${facingMonster.getStats().name}` : '',
       this.isInDialog ? '[대화 중] Z: 진행' : 'WASD/Arrow: 이동 | ESC: 메뉴',
     ].filter(Boolean).join('\n'));
   }
 
   /**
-   * 플레이어 이동 후 몬스터 충돌 체크
+   * 주어진 타일이 grass 타일인지 확인
    */
-  private checkMonsterCollision(): void {
-    const playerPos = this.player.getTilePosition();
-    const monster = this.findMonsterAt(playerPos.x, playerPos.y);
+  private isGrassTile(tileX: number, tileY: number): boolean {
+    if (!this.grassLayer) return false;
 
-    if (monster) {
-      this.startBattle(monster);
+    const tile = this.grassLayer.getTileAt(tileX, tileY);
+    return tile !== null && tile.index === GameScene.GRASS_TILE_INDEX;
+  }
+
+  /**
+   * 랜덤 인카운터 체크 (grass 타일 위에서만)
+   */
+  private checkRandomEncounter(): void {
+    const playerPos = this.player.getTilePosition();
+
+    // grass 타일이 아니면 무시
+    if (!this.isGrassTile(playerPos.x, playerPos.y)) {
+      return;
     }
+
+    // 인카운터 체크
+    const result = EncounterSystem.checkEncounter(this.monstersData);
+
+    if (result.triggered && result.monster) {
+      console.log(`GameScene: Wild ${result.monster.name} appeared!`);
+      this.startRandomBattle(result.monster);
+    }
+  }
+
+  /**
+   * 랜덤 인카운터로 전투 시작 (고정 위치 없음)
+   */
+  private startRandomBattle(monsterConfig: MonsterConfig): void {
+    const playerPos = this.player.getTilePosition();
+
+    const battleData: BattleSceneData = {
+      player: { ...this.playerStats },
+      monster: monsterConfig,
+      // 랜덤 인카운터는 몬스터 타일 위치가 없으므로 -1로 표시
+      monsterTileX: -1,
+      monsterTileY: -1,
+      playerTileX: playerPos.x,
+      playerTileY: playerPos.y,
+    };
+
+    console.log(`GameScene: Starting random battle with ${monsterConfig.name}`);
+    this.scene.start('BattleScene', battleData);
   }
 
   update(_time: number, _delta: number): void {
@@ -496,27 +431,21 @@ export class GameScene extends Phaser.Scene {
     if (input.direction) {
       const moved = this.player.tryMove(input.direction as Direction);
 
-      // 이동 성공 시 몬스터 충돌 체크 (딜레이 후)
+      // 이동 성공 시 랜덤 인카운터 체크 (딜레이 후)
       if (moved) {
-        // 이동이 완료될 때 충돌 체크하도록 타이머 설정
         this.time.delayedCall(100, () => {
-          this.checkMonsterCollision();
+          this.checkRandomEncounter();
         });
       }
     }
 
-    // 액션 키 처리 - NPC 또는 몬스터와 상호작용
+    // 액션 키 처리 - NPC와 상호작용
     if (input.action) {
       const facing = this.player.getFacingTile();
       const npc = this.findNPCAt(facing.x, facing.y);
-      const monster = this.findMonsterAt(facing.x, facing.y);
 
       if (npc) {
         this.startDialog(npc);
-      } else if (monster) {
-        this.startBattle(monster);
-      } else {
-        console.log(`Action at facing tile: (${facing.x}, ${facing.y})`);
       }
     }
 

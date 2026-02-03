@@ -108,7 +108,15 @@ export interface Item {
 // ============ Dungeon Types ============
 
 /** Tile types for dungeon generation */
-export type TileType = 'floor' | 'wall' | 'door' | 'stairs_up' | 'stairs_down' | 'trap' | 'chest';
+export type TileType = 'floor' | 'wall' | 'door' | 'stairs_up' | 'stairs_down' | 'trap' | 'chest' | 'grass';
+
+/** Encounter configuration for grass tiles */
+export interface EncounterConfig {
+  /** Encounter chance per step (0-1) */
+  encounterRate: number;
+  /** Possible monster IDs that can appear */
+  possibleMonsters: string[];
+}
 
 /** Single tile data */
 export interface Tile {

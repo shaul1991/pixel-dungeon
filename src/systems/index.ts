@@ -4,3 +4,5 @@ export { BattleSystem } from './BattleSystem';
 export type { BattleRewards } from './BattleSystem';
 export { HealthComponent } from './HealthComponent';
 export type { HealthState, DamageResult, HealResult } from './HealthComponent';
+export { EncounterSystem } from './EncounterSystem';
+export type { EncounterResult } from './EncounterSystem';
