@@ -15,6 +15,39 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.1.1] - 2026-02-03
+
+### Added
+- **Save System**
+  - LocalStorage 기반 저장/로드 시스템 (`SaveSystem.ts`)
+  - 자동 저장 (플레이어 이동 시)
+  - 저장 데이터 버전 관리 및 유효성 검증
+  - SaveSystem 단위 테스트 24개
+
+- **Continue Feature**
+  - 메뉴에서 CONTINUE 버튼 활성화 (저장 데이터 존재 시)
+  - 마지막 저장 시간 표시
+  - 저장된 위치/스탯에서 게임 재개
+
+- **Pixel Theme Design**
+  - `PixelTheme.ts` 색상 팔레트 및 유틸리티
+  - 모든 UI 컴포넌트 픽셀 아트 스타일 적용
+  - MenuScene 픽셀 디자인 적용
+
+- **NPC Healing**
+  - NPC 대화 종료 시 HP/MP 전체 회복
+
+### Fixed
+- BattleScene에서 HP/MP 수치 미표시 문제 수정
+- MP 텍스트 필드 누락 수정
+
+### Changed
+- **Workflow Documentation**
+  - GAPEVI 워크플로우에 문서화 필수 단계 추가
+  - CHANGELOG.md, TODO.md, ROADMAP.md 업데이트 필수화
+
+---
+
 ## [0.1.0] - 2026-02-03
 
 ### Added
@@ -68,4 +101,5 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 0.1.1 | 2026-02-03 | 저장/로드, 픽셀 테마, NPC 회복, 워크플로우 개선 |
 | 0.1.0 | 2026-02-03 | 프로토타입 - 기본 게임플레이 |
