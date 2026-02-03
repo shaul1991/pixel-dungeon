@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { UI_HEIGHT } from '../config';
 import { BattleUI } from '../ui/BattleUI';
 import { BattleSystem } from '../systems/BattleSystem';
 import type { MonsterConfig } from '../entities/Monster';
@@ -90,28 +91,42 @@ export class BattleScene extends Phaser.Scene {
 
   private createBattleArea(): void {
     const graphics = this.add.graphics();
+    const screenHeight = 320 + UI_HEIGHT; // 352
+    const halfHeight = screenHeight / 2; // 176
 
-    // 상단 전투 영역 (몬스터 영역)
-    graphics.fillStyle(0x2d2d44, 1);
-    graphics.fillRect(20, 60, 440, 100);
-    graphics.lineStyle(2, 0x4a4a6a, 1);
-    graphics.strokeRect(20, 60, 440, 100);
+    // 상단 영역 배경 (몬스터) - 약간 어두운 색
+    graphics.fillStyle(0x1a2a1a, 1);
+    graphics.fillRect(0, 0, 480, halfHeight);
 
-    // 하단 전투 영역 (플레이어 영역)
-    graphics.fillStyle(0x2d2d44, 1);
-    graphics.fillRect(20, 170, 440, 50);
-    graphics.lineStyle(2, 0x4a4a6a, 1);
-    graphics.strokeRect(20, 170, 440, 50);
+    // 상단 영역 바닥 (잔디/땅 느낌)
+    graphics.fillStyle(0x2d4a2d, 1);
+    graphics.fillRect(0, halfHeight - 40, 480, 40);
+
+    // 하단 영역 배경 (플레이어) - 조금 더 밝은 색
+    graphics.fillStyle(0x1a1a2e, 1);
+    graphics.fillRect(0, halfHeight, 480, halfHeight);
+
+    // 하단 영역 바닥 (플랫폼 느낌)
+    graphics.fillStyle(0x2d2d4a, 1);
+    graphics.fillRect(0, halfHeight, 480, 30);
+
+    // 중앙 구분선
+    graphics.lineStyle(2, 0x3a3a5a, 0.5);
+    graphics.lineBetween(0, halfHeight, 480, halfHeight);
   }
 
   private createSprites(): void {
-    // 몬스터 스프라이트 (상단 중앙)
-    this.monsterSprite = this.add.sprite(240, 110, 'slime');
-    this.monsterSprite.setScale(3); // 확대 표시
+    const screenHeight = 320 + UI_HEIGHT; // 352
+    const halfHeight = screenHeight / 2; // 176
 
-    // 플레이어 스프라이트 (하단)
-    this.playerSprite = this.add.sprite(100, 195, 'player', 0);
-    this.playerSprite.setScale(2);
+    // 몬스터 스프라이트 (상단 오른쪽) - 포켓몬 스타일
+    this.monsterSprite = this.add.sprite(340, halfHeight - 70, 'slime');
+    this.monsterSprite.setScale(4); // 크게 표시
+
+    // 플레이어 스프라이트 (하단 왼쪽) - 포켓몬 스타일
+    this.playerSprite = this.add.sprite(120, halfHeight + 50, 'player', 0);
+    this.playerSprite.setScale(3);
+    this.playerSprite.setFlipX(true); // 오른쪽을 보도록
   }
 
   private setupInput(): void {
