@@ -6,3 +6,5 @@ export { HealthComponent } from './HealthComponent';
 export type { HealthState, DamageResult, HealResult } from './HealthComponent';
 export { EncounterSystem } from './EncounterSystem';
 export type { EncounterResult } from './EncounterSystem';
+export { SaveSystem } from './SaveSystem';
+export type { SaveData } from './SaveSystem';
