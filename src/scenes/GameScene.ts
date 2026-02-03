@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { DEBUG } from '../config';
+import { DEBUG, UI_HEIGHT } from '../config';
 import { Player } from '../entities/Player';
 import type { Direction } from '../entities/Player';
 import { NPC } from '../entities/NPC';
@@ -8,6 +8,7 @@ import type { MonsterConfig } from '../entities/Monster';
 import { InputController } from '../systems/InputController';
 import { EncounterSystem } from '../systems/EncounterSystem';
 import { DialogBox } from '../ui/DialogBox';
+import { StatusUI } from '../ui/StatusUI';
 import type { PlayerData, BattleSceneData } from './BattleScene';
 
 interface BattleResultData {
@@ -55,6 +56,11 @@ export class GameScene extends Phaser.Scene {
   // 대화창
   private dialogBox!: DialogBox;
   private isInDialog: boolean = false;
+
+  // 스테이터스 UI
+  private statusUI!: StatusUI;
+  private uiCamera!: Phaser.Cameras.Scene2D.Camera;
+  private uiBg!: Phaser.GameObjects.Graphics;
 
   // 디버그 UI
   private debugText!: Phaser.GameObjects.Text;
@@ -108,10 +114,31 @@ export class GameScene extends Phaser.Scene {
     // 대화창 생성
     this.dialogBox = new DialogBox(this);
 
+    // 스테이터스 UI 생성 (상단 UI 영역에 배치 - 음수 Y 좌표)
+    this.statusUI = new StatusUI(this, { x: 4, y: -UI_HEIGHT + 2 });
+    this.updateStatusUI();
+
+    // StatusUI는 게임 카메라에서 제외 (UI 카메라에만 표시)
+    this.cameras.main.ignore(this.statusUI);
+
     // 디버그 정보 표시
     if (DEBUG) {
       this.showDebugInfo();
     }
+  }
+
+  /**
+   * 스테이터스 UI 업데이트
+   */
+  private updateStatusUI(): void {
+    this.statusUI.update({
+      hp: this.playerStats.hp,
+      maxHp: this.playerStats.maxHp,
+      mp: this.playerStats.mp,
+      maxMp: this.playerStats.maxMp,
+      attack: this.playerStats.attack,
+      defense: this.playerStats.defense,
+    });
   }
 
   private createTilemap(): void {
@@ -311,17 +338,40 @@ export class GameScene extends Phaser.Scene {
   }
 
   private setupCamera(): void {
-    // 카메라가 맵 전체를 볼 수 있도록 설정
     const mapWidth = this.map.widthInPixels;
     const mapHeight = this.map.heightInPixels;
 
+    // UI 배경 생성 - 음수 Y 좌표에 배치 (게임 영역과 분리)
+    // UI 영역은 월드 좌표 (0, -UI_HEIGHT) ~ (480, 0) 범위 사용
+    this.uiBg = this.add.graphics();
+    this.uiBg.fillStyle(0x1a1a2e, 1);
+    this.uiBg.fillRect(0, -UI_HEIGHT, 480, UI_HEIGHT);
+    this.uiBg.lineStyle(1, 0x444444, 1);
+    this.uiBg.lineBetween(0, -1, 480, -1);
+    this.uiBg.setDepth(800);
+
+    // 메인 카메라(게임용): 하단 게임 영역에 뷰포트 설정
+    // 월드 좌표 (0, 0) 부터 표시
+    this.cameras.main.setViewport(0, UI_HEIGHT, 480, 320);
     this.cameras.main.setBounds(0, 0, mapWidth, mapHeight);
-
-    // 카메라가 플레이어를 따라가도록 설정
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
-
-    // 배경색 설정
     this.cameras.main.setBackgroundColor('#0d0d0d');
+
+    // 메인 카메라에서 UI 오브젝트 제외
+    this.cameras.main.ignore(this.uiBg);
+
+    // UI 카메라: 상단 UI 영역 전용
+    // 월드 좌표 (0, -UI_HEIGHT) 부터 표시 (게임 타일맵과 완전 분리)
+    this.uiCamera = this.cameras.add(0, 0, 480, UI_HEIGHT);
+    this.uiCamera.setScroll(0, -UI_HEIGHT);
+    this.uiCamera.setBackgroundColor('#1a1a2e');
+
+    // UI 카메라에서 게임 오브젝트 제외 (혹시 모를 경우 대비)
+    if (this.groundLayer) this.uiCamera.ignore(this.groundLayer);
+    if (this.wallsLayer) this.uiCamera.ignore(this.wallsLayer);
+    if (this.grassLayer) this.uiCamera.ignore(this.grassLayer);
+    this.uiCamera.ignore(this.player);
+    this.npcs.forEach((npc) => this.uiCamera.ignore(npc));
   }
 
   private setupInput(): void {

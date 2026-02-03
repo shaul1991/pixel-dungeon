@@ -4,10 +4,13 @@ import { BootScene, PreloadScene, MenuScene, GameScene, BattleScene } from './sc
 // 디버그 모드 설정
 export const DEBUG = false;
 
+// UI 영역 높이 (상단 고정)
+export const UI_HEIGHT = 32;
+
 export const GameConfig: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   width: 480,
-  height: 320,
+  height: 320 + UI_HEIGHT, // 352 (UI 32 + 게임 320)
   pixelArt: true,
   scale: {
     mode: Phaser.Scale.FIT,
