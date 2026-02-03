@@ -1,5 +1,10 @@
 import Phaser from 'phaser';
 import { HealthBar } from './HealthBar';
+import {
+  PixelColors,
+  PixelColorStrings,
+  createPixelTextStyle,
+} from './PixelTheme';
 
 export interface PlayerStatus {
   hp: number;
@@ -20,9 +25,10 @@ export interface StatusUIConfig {
 }
 
 /**
- * StatusUI - 플레이어 스탯 HUD
+ * StatusUI - 플레이어 스탯 HUD (도트 스타일)
  *
  * 화면 상단에 고정되어 HP, MP, ATK, DEF 등을 표시
+ * 8비트/16비트 레트로 스타일
  */
 export class StatusUI extends Phaser.GameObjects.Container {
   private hpBar: HealthBar;
@@ -35,7 +41,7 @@ export class StatusUI extends Phaser.GameObjects.Container {
   // 바 크기 설정
   private static readonly BAR_WIDTH = 50;
   private static readonly BAR_HEIGHT = 8;
-  private static readonly PADDING = 4;
+  private static readonly PADDING = 5;
 
   constructor(scene: Phaser.Scene, config: StatusUIConfig) {
     super(scene, config.x, config.y);
@@ -44,82 +50,75 @@ export class StatusUI extends Phaser.GameObjects.Container {
     this.background = this.createBackground();
     this.add(this.background);
 
-    // HP 바 생성
+    // HP 바 생성 (도트 스타일)
     this.hpBar = new HealthBar(scene, {
       x: 0,
       y: 0,
       width: StatusUI.BAR_WIDTH,
       height: StatusUI.BAR_HEIGHT,
-      fillColor: 0x00ff00,
+      fillColor: PixelColors.hpGreen,
+      bgColor: PixelColors.bgDark,
+      borderColor: PixelColors.frameDark,
       showText: false,
+      segmented: true,
     });
-    // HealthBar는 자체적으로 scene.add.existing을 호출하므로 부모 설정
-    this.hpBar.setPosition(StatusUI.PADDING + 24, StatusUI.PADDING);
+    this.hpBar.setPosition(StatusUI.PADDING + 20, StatusUI.PADDING);
     this.add(this.hpBar);
 
-    // HP 라벨
+    // HP 라벨 (도트 스타일)
     const hpLabel = scene.add.text(StatusUI.PADDING, StatusUI.PADDING - 1, 'HP', {
-      fontSize: '8px',
-      color: '#00ff00',
-      fontFamily: 'monospace',
+      ...createPixelTextStyle('small', PixelColorStrings.hpGreen),
+      fontStyle: 'bold',
     });
     this.add(hpLabel);
 
     // HP 수치 텍스트
     this.hpValueText = scene.add.text(
-      StatusUI.PADDING + 24 + StatusUI.BAR_WIDTH + 2,
+      StatusUI.PADDING + 20 + StatusUI.BAR_WIDTH + 3,
       StatusUI.PADDING - 1,
       '000/000',
-      {
-        fontSize: '8px',
-        color: '#00ff00',
-        fontFamily: 'monospace',
-      }
+      createPixelTextStyle('small', PixelColorStrings.hpGreen)
     );
     this.add(this.hpValueText);
 
-    // MP 바 생성
+    // MP 바 생성 (도트 스타일)
     this.mpBar = new HealthBar(scene, {
       x: 0,
       y: 0,
       width: StatusUI.BAR_WIDTH,
       height: StatusUI.BAR_HEIGHT,
-      fillColor: 0x0088ff,
+      fillColor: PixelColors.mpBlue,
+      bgColor: PixelColors.bgDark,
+      borderColor: PixelColors.frameDark,
       showText: false,
+      segmented: true,
     });
-    this.mpBar.setPosition(StatusUI.PADDING + 24, StatusUI.PADDING + 12);
+    this.mpBar.setPosition(StatusUI.PADDING + 20, StatusUI.PADDING + 12);
     this.add(this.mpBar);
 
-    // MP 라벨
+    // MP 라벨 (도트 스타일)
     const mpLabel = scene.add.text(StatusUI.PADDING, StatusUI.PADDING + 11, 'MP', {
-      fontSize: '8px',
-      color: '#0088ff',
-      fontFamily: 'monospace',
+      ...createPixelTextStyle('small', PixelColorStrings.mpBlue),
+      fontStyle: 'bold',
     });
     this.add(mpLabel);
 
     // MP 수치 텍스트
     this.mpValueText = scene.add.text(
-      StatusUI.PADDING + 24 + StatusUI.BAR_WIDTH + 2,
+      StatusUI.PADDING + 20 + StatusUI.BAR_WIDTH + 3,
       StatusUI.PADDING + 11,
       '000/000',
-      {
-        fontSize: '8px',
-        color: '#0088ff',
-        fontFamily: 'monospace',
-      }
+      createPixelTextStyle('small', PixelColorStrings.mpBlue)
     );
     this.add(this.mpValueText);
 
     // 스탯 텍스트 (ATK/DEF)
     this.statsText = scene.add.text(
-      StatusUI.PADDING + 24 + StatusUI.BAR_WIDTH + 50,
+      StatusUI.PADDING + 20 + StatusUI.BAR_WIDTH + 50,
       StatusUI.PADDING,
       '',
       {
-        fontSize: '8px',
-        color: '#ffffff',
-        fontFamily: 'monospace',
+        ...createPixelTextStyle('small', PixelColorStrings.textWhite),
         lineSpacing: 4,
       }
     );
@@ -133,20 +132,30 @@ export class StatusUI extends Phaser.GameObjects.Container {
   }
 
   /**
-   * 배경 패널 생성
+   * 배경 패널 생성 (도트 스타일 - 직각 모서리)
    */
   private createBackground(): Phaser.GameObjects.Graphics {
     const bg = this.scene.add.graphics();
     const width = 180;
     const height = 28;
 
-    // 반투명 검은 배경
-    bg.fillStyle(0x000000, 0.7);
-    bg.fillRoundedRect(0, 0, width, height, 4);
+    // 어두운 배경 (도트 스타일)
+    bg.fillStyle(PixelColors.bgMedium, 0.9);
+    bg.fillRect(0, 0, width, height);
 
-    // 테두리
-    bg.lineStyle(1, 0x444444, 1);
-    bg.strokeRoundedRect(0, 0, width, height, 4);
+    // 내부 하이라이트 (상단/왼쪽 밝게)
+    bg.fillStyle(PixelColors.frameLight, 0.3);
+    bg.fillRect(1, 1, width - 2, 1);
+    bg.fillRect(1, 1, 1, height - 2);
+
+    // 내부 그림자 (하단/오른쪽 어둡게)
+    bg.fillStyle(PixelColors.bgDark, 0.5);
+    bg.fillRect(1, height - 2, width - 2, 1);
+    bg.fillRect(width - 2, 1, 1, height - 2);
+
+    // 외부 테두리 (픽셀 스타일)
+    bg.lineStyle(1, PixelColors.frameMedium, 1);
+    bg.strokeRect(0, 0, width, height);
 
     return bg;
   }

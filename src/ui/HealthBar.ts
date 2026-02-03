@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { PixelColors, PixelColorStrings, createPixelTextStyle } from './PixelTheme';
 
 export interface HealthBarConfig {
   x: number;
@@ -9,12 +10,16 @@ export interface HealthBarConfig {
   fillColor?: number;
   borderColor?: number;
   showText?: boolean;
+  segmented?: boolean;
 }
 
+/**
+ * HealthBar - 도트 스타일 HP/MP 바
+ *
+ * 세그먼트 스타일과 픽셀 테두리를 가진 레트로 HP 바
+ */
 export class HealthBar extends Phaser.GameObjects.Container {
-  private background: Phaser.GameObjects.Graphics;
-  private fill: Phaser.GameObjects.Graphics;
-  private border: Phaser.GameObjects.Graphics;
+  private graphics: Phaser.GameObjects.Graphics;
   private text: Phaser.GameObjects.Text | null = null;
 
   private barWidth: number;
@@ -22,6 +27,7 @@ export class HealthBar extends Phaser.GameObjects.Container {
   private bgColor: number;
   private fillColor: number;
   private borderColor: number;
+  private segmented: boolean;
 
   private currentValue: number = 100;
   private maxValue: number = 100;
@@ -31,33 +37,23 @@ export class HealthBar extends Phaser.GameObjects.Container {
 
     this.barWidth = config.width;
     this.barHeight = config.height;
-    this.bgColor = config.bgColor ?? 0x333333;
-    this.fillColor = config.fillColor ?? 0x00ff00;
-    this.borderColor = config.borderColor ?? 0x000000;
+    this.bgColor = config.bgColor ?? PixelColors.bgDark;
+    this.fillColor = config.fillColor ?? PixelColors.hpGreen;
+    this.borderColor = config.borderColor ?? PixelColors.frameMedium;
+    this.segmented = config.segmented ?? true;
 
-    // 배경 생성
-    this.background = scene.add.graphics();
-    this.background.fillStyle(this.bgColor, 1);
-    this.background.fillRect(0, 0, this.barWidth, this.barHeight);
-    this.add(this.background);
-
-    // 채움 바 생성
-    this.fill = scene.add.graphics();
-    this.add(this.fill);
-
-    // 테두리 생성
-    this.border = scene.add.graphics();
-    this.border.lineStyle(1, this.borderColor, 1);
-    this.border.strokeRect(0, 0, this.barWidth, this.barHeight);
-    this.add(this.border);
+    // 그래픽 객체 생성
+    this.graphics = scene.add.graphics();
+    this.add(this.graphics);
 
     // 텍스트 표시 옵션
     if (config.showText) {
-      this.text = scene.add.text(this.barWidth / 2, this.barHeight / 2, '', {
-        fontSize: '8px',
-        color: '#ffffff',
-        fontFamily: 'monospace',
-      });
+      this.text = scene.add.text(
+        this.barWidth / 2,
+        this.barHeight / 2,
+        '',
+        createPixelTextStyle('small', PixelColorStrings.textWhite)
+      );
       this.text.setOrigin(0.5, 0.5);
       this.add(this.text);
     }
@@ -87,16 +83,44 @@ export class HealthBar extends Phaser.GameObjects.Container {
   }
 
   /**
-   * 바 다시 그리기
+   * 바 다시 그리기 (도트 스타일)
    */
   private redraw(): void {
     const percentage = this.currentValue / this.maxValue;
-    const fillWidth = Math.max(0, this.barWidth * percentage);
+    const fillWidth = Math.floor(this.barWidth * percentage);
 
-    // 채움 바 다시 그리기
-    this.fill.clear();
-    this.fill.fillStyle(this.fillColor, 1);
-    this.fill.fillRect(0, 0, fillWidth, this.barHeight);
+    this.graphics.clear();
+
+    // 배경 (어두운 색)
+    this.graphics.fillStyle(this.bgColor, 1);
+    this.graphics.fillRect(0, 0, this.barWidth, this.barHeight);
+
+    // 채움 바
+    if (fillWidth > 0) {
+      this.graphics.fillStyle(this.fillColor, 1);
+      this.graphics.fillRect(0, 0, fillWidth, this.barHeight);
+
+      // 상단 하이라이트 (1픽셀)
+      this.graphics.fillStyle(0xffffff, 0.3);
+      this.graphics.fillRect(0, 0, fillWidth, 1);
+
+      // 세그먼트 효과 (선택적)
+      if (this.segmented && this.barWidth > 20) {
+        const segmentWidth = Math.max(3, Math.floor(this.barWidth / 15));
+        this.graphics.fillStyle(0x000000, 0.15);
+        for (let sx = segmentWidth; sx < fillWidth; sx += segmentWidth) {
+          this.graphics.fillRect(sx, 0, 1, this.barHeight);
+        }
+      }
+
+      // 하단 어두운 라인 (1픽셀)
+      this.graphics.fillStyle(0x000000, 0.3);
+      this.graphics.fillRect(0, this.barHeight - 1, fillWidth, 1);
+    }
+
+    // 테두리 (2픽셀 효과)
+    this.graphics.lineStyle(1, this.borderColor, 1);
+    this.graphics.strokeRect(0, 0, this.barWidth, this.barHeight);
 
     // 텍스트 업데이트
     if (this.text) {
@@ -111,11 +135,11 @@ export class HealthBar extends Phaser.GameObjects.Container {
     const percentage = this.currentValue / this.maxValue;
 
     if (percentage > 0.5) {
-      this.fillColor = 0x00ff00; // 초록색
+      this.fillColor = PixelColors.hpGreen;
     } else if (percentage > 0.25) {
-      this.fillColor = 0xffff00; // 노란색
+      this.fillColor = PixelColors.hpYellow;
     } else {
-      this.fillColor = 0xff0000; // 빨간색
+      this.fillColor = PixelColors.hpRed;
     }
 
     this.redraw();
