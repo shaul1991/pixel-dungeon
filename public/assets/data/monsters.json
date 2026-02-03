@@ -1,0 +1,11 @@
+{
+  "slime": {
+    "id": "slime",
+    "name": "슬라임",
+    "hp": 20,
+    "attack": 5,
+    "defense": 2,
+    "exp": 10,
+    "gold": 5
+  }
+}
