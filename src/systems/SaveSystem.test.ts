@@ -33,8 +33,9 @@ function createPlayerData(overrides: Partial<SavePlayerStats> = {}): SavePlayerS
     maxHp: 100,
     mp: 50,
     maxMp: 50,
-    attack: 10,
-    defense: 5,
+    attackMin: 3,
+    attackMax: 5,
+    defense: 2,
     level: 1,
     exp: 0,
     gold: 0,
@@ -45,7 +46,7 @@ function createPlayerData(overrides: Partial<SavePlayerStats> = {}): SavePlayerS
 // 테스트용 저장 데이터 생성
 function createSaveData(overrides: Partial<SaveData> = {}): SaveData {
   return {
-    version: '1.1.0',
+    version: '1.2.0',
     timestamp: Date.now(),
     player: {
       tileX: 5,
@@ -85,7 +86,7 @@ describe('SaveSystem', () => {
       expect(savedData.player.tileX).toBe(5);
       expect(savedData.player.tileY).toBe(7);
       expect(savedData.player.stats.hp).toBe(100);
-      expect(savedData.version).toBe('1.1.0');
+      expect(savedData.version).toBe('1.2.0');
     });
 
     it('should include timestamp in save data', () => {
@@ -270,7 +271,7 @@ describe('SaveSystem', () => {
     });
 
     it('should return true for compatible minor version', () => {
-      const saveData = createSaveData({ version: '1.1.0' });
+      const saveData = createSaveData({ version: '1.2.0' });
 
       expect(SaveSystem.isValidSaveData(saveData)).toBe(true);
     });

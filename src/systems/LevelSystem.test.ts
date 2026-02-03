@@ -68,7 +68,8 @@ describe('LevelSystem', () => {
       expect(result!.newLevel).toBe(2);
       expect(result!.hpIncrease).toBe(10);
       expect(result!.mpIncrease).toBe(5);
-      expect(result!.attackIncrease).toBe(2);
+      expect(result!.attackMinIncrease).toBe(1);
+      expect(result!.attackMaxIncrease).toBe(3);
       expect(result!.defenseIncrease).toBe(1);
     });
 
@@ -104,7 +105,8 @@ describe('LevelSystem', () => {
       expect(result.levelUps).toBe(1);
       expect(result.updatedStats.maxHp).toBe(initialStats.maxHp + 10);
       expect(result.updatedStats.maxMp).toBe(initialStats.maxMp + 5);
-      expect(result.updatedStats.attack).toBe(initialStats.attack + 2);
+      expect(result.updatedStats.attackMin).toBe(initialStats.attackMin + 1);
+      expect(result.updatedStats.attackMax).toBe(initialStats.attackMax + 3);
       expect(result.updatedStats.defense).toBe(initialStats.defense + 1);
     });
 
@@ -133,7 +135,8 @@ describe('LevelSystem', () => {
       expect(result.levelUps).toBe(2);
       expect(result.updatedStats.maxHp).toBe(initialStats.maxHp + 20); // 10 * 2
       expect(result.updatedStats.maxMp).toBe(initialStats.maxMp + 10); // 5 * 2
-      expect(result.updatedStats.attack).toBe(initialStats.attack + 4); // 2 * 2
+      expect(result.updatedStats.attackMin).toBe(initialStats.attackMin + 2); // 1 * 2
+      expect(result.updatedStats.attackMax).toBe(initialStats.attackMax + 6); // 3 * 2
       expect(result.updatedStats.defense).toBe(initialStats.defense + 2); // 1 * 2
     });
 
@@ -147,15 +150,18 @@ describe('LevelSystem', () => {
 
     it('should stop at max level', () => {
       // Create a level 9 character
+      // Base stats: attackMin=3, attackMax=5, defense=2
+      // After 8 level ups: +8 attackMin, +24 attackMax, +8 defense
       const highLevelStats: PlayerStats = {
         level: 9,
         exp: 0,
-        hp: 190,
-        maxHp: 190,
-        mp: 95,
-        maxMp: 95,
-        attack: 26,
-        defense: 13,
+        hp: 180,
+        maxHp: 180,
+        mp: 90,
+        maxMp: 90,
+        attackMin: 11,  // 3 + 1*8 = 11
+        attackMax: 29,  // 5 + 3*8 = 29
+        defense: 10,    // 2 + 1*8 = 10
       };
 
       // Give enough exp for multiple levels but should stop at 10
@@ -218,8 +224,9 @@ describe('LevelSystem', () => {
       expect(stats.maxHp).toBe(100);
       expect(stats.mp).toBe(50);
       expect(stats.maxMp).toBe(50);
-      expect(stats.attack).toBe(10);
-      expect(stats.defense).toBe(5);
+      expect(stats.attackMin).toBe(3);
+      expect(stats.attackMax).toBe(5);
+      expect(stats.defense).toBe(2);
     });
 
     it('should return a new object each time', () => {

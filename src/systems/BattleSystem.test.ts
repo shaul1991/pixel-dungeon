@@ -13,52 +13,52 @@ describe('BattleSystem', () => {
       vi.restoreAllMocks();
     });
 
-    it('should calculate base damage as attack - defense/2', () => {
-      // Random returns 0.4 -> Math.floor(0.4 * 5) - 2 = 0
-      vi.mocked(Math.random).mockReturnValue(0.4);
+    it('should calculate damage with attackMin-attackMax range', () => {
+      // Random returns 0 -> picks attackMin (8)
+      vi.mocked(Math.random).mockReturnValue(0);
 
-      const damage = BattleSystem.calculateDamage(10, 4);
-      // base: 10 - 2 = 8, random: 0, final: 8
-      expect(damage).toBe(8);
+      const damage = BattleSystem.calculateDamage(8, 12, 4);
+      // attackPower: 8, base: 8 - 2 = 6
+      expect(damage).toBe(6);
     });
 
-    it('should add random bonus between -2 and 2', () => {
-      // Random returns 0.0 -> Math.floor(0 * 5) - 2 = -2
-      vi.mocked(Math.random).mockReturnValue(0.0);
-      expect(BattleSystem.calculateDamage(10, 0)).toBe(8); // 10 + (-2) = 8
+    it('should pick random attack value within range', () => {
+      // Random returns 0 -> attackMin (8)
+      vi.mocked(Math.random).mockReturnValue(0);
+      expect(BattleSystem.calculateDamage(8, 12, 0)).toBe(8);
 
-      // Random returns 0.99 -> Math.floor(0.99 * 5) - 2 = 2
+      // Random returns near 1 -> attackMax (12)
       vi.mocked(Math.random).mockReturnValue(0.99);
-      expect(BattleSystem.calculateDamage(10, 0)).toBe(12); // 10 + 2 = 12
+      expect(BattleSystem.calculateDamage(8, 12, 0)).toBe(12);
     });
 
     it('should return minimum 1 damage when calculated damage is 0 or negative', () => {
-      vi.mocked(Math.random).mockReturnValue(0.0); // -2 bonus
+      vi.mocked(Math.random).mockReturnValue(0); // picks attackMin
 
-      const damage = BattleSystem.calculateDamage(1, 10);
-      // base: 1 - 5 = -4, random: -2, final: -6 -> min 1
+      const damage = BattleSystem.calculateDamage(1, 3, 10);
+      // attackPower: 1, base: 1 - 5 = -4 -> min 1
       expect(damage).toBe(1);
     });
 
     it('should handle zero attack', () => {
-      vi.mocked(Math.random).mockReturnValue(0.4); // 0 bonus
+      vi.mocked(Math.random).mockReturnValue(0);
 
-      const damage = BattleSystem.calculateDamage(0, 0);
-      // base: 0, random: 0, final: 0 -> min 1
+      const damage = BattleSystem.calculateDamage(0, 0, 0);
+      // attackPower: 0, base: 0 -> min 1
       expect(damage).toBe(1);
     });
 
     it('should floor defense divided by 2', () => {
-      vi.mocked(Math.random).mockReturnValue(0.4); // 0 bonus
+      vi.mocked(Math.random).mockReturnValue(0); // picks attackMin
 
       // defense 5 -> 2 (floored)
-      const damage = BattleSystem.calculateDamage(10, 5);
-      // base: 10 - 2 = 8
+      const damage = BattleSystem.calculateDamage(10, 10, 5);
+      // attackPower: 10, base: 10 - 2 = 8
       expect(damage).toBe(8);
 
       // defense 3 -> 1 (floored)
-      const damage2 = BattleSystem.calculateDamage(10, 3);
-      // base: 10 - 1 = 9
+      const damage2 = BattleSystem.calculateDamage(10, 10, 3);
+      // attackPower: 10, base: 10 - 1 = 9
       expect(damage2).toBe(9);
     });
   });
@@ -94,7 +94,8 @@ describe('BattleSystem', () => {
         id: 'slime',
         name: 'Slime',
         hp: 30,
-        attack: 5,
+        attackMin: 3,
+        attackMax: 7,
         defense: 2,
         exp: 10,
         gold: 5,
@@ -111,7 +112,8 @@ describe('BattleSystem', () => {
         id: 'ghost',
         name: 'Ghost',
         hp: 20,
-        attack: 3,
+        attackMin: 2,
+        attackMax: 4,
         defense: 0,
         exp: 0,
         gold: 0,

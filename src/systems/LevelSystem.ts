@@ -8,7 +8,8 @@ export interface LevelUpResult {
   newLevel: number;
   hpIncrease: number;
   mpIncrease: number;
-  attackIncrease: number;
+  attackMinIncrease: number;
+  attackMaxIncrease: number;
   defenseIncrease: number;
 }
 
@@ -19,7 +20,8 @@ export interface PlayerStats {
   maxHp: number;
   mp: number;
   maxMp: number;
-  attack: number;
+  attackMin: number;
+  attackMax: number;
   defense: number;
 }
 
@@ -46,7 +48,8 @@ const EXP_TABLE: Record<number, number> = {
 const STAT_GROWTH = {
   hp: 10, // 레벨당 HP +10
   mp: 5, // 레벨당 MP +5
-  attack: 2, // 레벨당 공격력 +2
+  attackMin: 1, // 레벨당 최소 공격력 +1
+  attackMax: 3, // 레벨당 최대 공격력 +3
   defense: 1, // 레벨당 방어력 +1
 };
 
@@ -100,7 +103,8 @@ export class LevelSystem {
       newLevel: currentLevel + 1,
       hpIncrease: STAT_GROWTH.hp,
       mpIncrease: STAT_GROWTH.mp,
-      attackIncrease: STAT_GROWTH.attack,
+      attackMinIncrease: STAT_GROWTH.attackMin,
+      attackMaxIncrease: STAT_GROWTH.attackMax,
       defenseIncrease: STAT_GROWTH.defense,
     };
   }
@@ -134,7 +138,8 @@ export class LevelSystem {
       updatedStats.level = levelUpResult.newLevel;
       updatedStats.maxHp += levelUpResult.hpIncrease;
       updatedStats.maxMp += levelUpResult.mpIncrease;
-      updatedStats.attack += levelUpResult.attackIncrease;
+      updatedStats.attackMin += levelUpResult.attackMinIncrease;
+      updatedStats.attackMax += levelUpResult.attackMaxIncrease;
       updatedStats.defense += levelUpResult.defenseIncrease;
 
       // 레벨업 시 HP/MP 전체 회복
@@ -173,8 +178,9 @@ export class LevelSystem {
       maxHp: 100,
       mp: 50,
       maxMp: 50,
-      attack: 10,
-      defense: 5,
+      attackMin: 3,
+      attackMax: 5,
+      defense: 2,
     };
   }
 }

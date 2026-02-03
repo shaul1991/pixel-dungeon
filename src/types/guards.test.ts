@@ -24,8 +24,9 @@ import {
 const createBaseStats = () => ({
   hp: 100,
   maxHp: 100,
-  attack: 10,
-  defense: 5,
+  attackMin: 3,
+  attackMax: 5,
+  defense: 2,
   speed: 5,
 });
 

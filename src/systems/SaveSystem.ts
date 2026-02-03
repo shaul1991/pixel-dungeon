@@ -16,7 +16,7 @@ export interface SavePlayerStats extends PlayerData {
 }
 
 /** 저장 데이터 버전 (호환성 관리용) */
-const SAVE_VERSION = '1.1.0';
+const SAVE_VERSION = '1.2.0';
 
 /** LocalStorage 키 */
 const SAVE_KEY = 'pixel-dungeon-save';
@@ -156,7 +156,8 @@ export class SaveSystem {
     if (typeof stats.maxHp !== 'number') return false;
     if (typeof stats.mp !== 'number') return false;
     if (typeof stats.maxMp !== 'number') return false;
-    if (typeof stats.attack !== 'number') return false;
+    if (typeof stats.attackMin !== 'number') return false;
+    if (typeof stats.attackMax !== 'number') return false;
     if (typeof stats.defense !== 'number') return false;
     if (typeof stats.level !== 'number') return false;
     if (typeof stats.exp !== 'number') return false;

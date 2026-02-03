@@ -11,7 +11,8 @@ export interface PlayerStatus {
   maxHp: number;
   mp: number;
   maxMp: number;
-  attack: number;
+  attackMin: number;
+  attackMax: number;
   defense: number;
   level?: number;
   gold?: number;
@@ -204,7 +205,7 @@ export class StatusUI extends Phaser.GameObjects.Container {
     // 스탯 텍스트 업데이트 (레벨 포함)
     const levelText = status.level !== undefined ? `LV${status.level}` : '';
     const lines = [
-      `${levelText} ATK${status.attack}`,
+      `${levelText} ATK${status.attackMin}-${status.attackMax}`,
       `DEF${status.defense}`,
     ];
     this.statsText.setText(lines.join('\n'));

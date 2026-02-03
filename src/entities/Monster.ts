@@ -4,7 +4,8 @@ export interface MonsterConfig {
   id: string;
   name: string;
   hp: number;
-  attack: number;
+  attackMin: number;
+  attackMax: number;
   defense: number;
   exp: number;
   gold: number;
@@ -15,7 +16,8 @@ export interface MonsterStats {
   name: string;
   hp: number;
   maxHp: number;
-  attack: number;
+  attackMin: number;
+  attackMax: number;
   defense: number;
   exp: number;
   gold: number;
@@ -26,7 +28,8 @@ export class Monster extends Phaser.Physics.Arcade.Sprite {
   private monsterName: string;
   private hp: number;
   private maxHp: number;
-  private attack: number;
+  private attackMin: number;
+  private attackMax: number;
   private defense: number;
   private exp: number;
   private gold: number;
@@ -48,7 +51,8 @@ export class Monster extends Phaser.Physics.Arcade.Sprite {
     this.monsterName = config.name;
     this.hp = config.hp;
     this.maxHp = config.hp;
-    this.attack = config.attack;
+    this.attackMin = config.attackMin;
+    this.attackMax = config.attackMax;
     this.defense = config.defense;
     this.exp = config.exp;
     this.gold = config.gold;
@@ -81,7 +85,8 @@ export class Monster extends Phaser.Physics.Arcade.Sprite {
       name: this.monsterName,
       hp: this.hp,
       maxHp: this.maxHp,
-      attack: this.attack,
+      attackMin: this.attackMin,
+      attackMax: this.attackMax,
       defense: this.defense,
       exp: this.exp,
       gold: this.gold,
@@ -103,7 +108,8 @@ export class Monster extends Phaser.Physics.Arcade.Sprite {
       id: this.monsterId,
       name: this.monsterName,
       hp: this.hp,
-      attack: this.attack,
+      attackMin: this.attackMin,
+      attackMax: this.attackMax,
       defense: this.defense,
       exp: this.exp,
       gold: this.gold,

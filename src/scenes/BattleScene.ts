@@ -9,7 +9,8 @@ export interface PlayerData {
   maxHp: number;
   mp: number;
   maxMp: number;
-  attack: number;
+  attackMin: number;
+  attackMax: number;
   defense: number;
 }
 
@@ -216,7 +217,11 @@ export class BattleScene extends Phaser.Scene {
     this.battleUI.hideMenu();
 
     // 데미지 계산
-    const damage = BattleSystem.calculateDamage(this.playerData.attack, this.monsterData.defense);
+    const damage = BattleSystem.calculateDamage(
+      this.playerData.attackMin,
+      this.playerData.attackMax,
+      this.monsterData.defense
+    );
     this.monsterData.hp = Math.max(0, this.monsterData.hp - damage);
 
     // 공격 애니메이션 효과
@@ -255,7 +260,11 @@ export class BattleScene extends Phaser.Scene {
 
   private async monsterAttack(): Promise<void> {
     // 데미지 계산
-    const damage = BattleSystem.calculateDamage(this.monsterData.attack, this.playerData.defense);
+    const damage = BattleSystem.calculateDamage(
+      this.monsterData.attackMin,
+      this.monsterData.attackMax,
+      this.playerData.defense
+    );
     this.playerData.hp = Math.max(0, this.playerData.hp - damage);
 
     // 몬스터 공격 애니메이션

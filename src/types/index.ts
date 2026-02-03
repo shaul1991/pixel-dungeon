@@ -32,7 +32,8 @@ export type Direction = (typeof Direction)[keyof typeof Direction];
 export interface Stats {
   hp: number;
   maxHp: number;
-  attack: number;
+  attackMin: number;
+  attackMax: number;
   defense: number;
   speed: number;
 }

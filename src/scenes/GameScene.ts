@@ -57,8 +57,9 @@ export class GameScene extends Phaser.Scene {
     maxHp: 100,
     mp: 50,
     maxMp: 50,
-    attack: 10,
-    defense: 5,
+    attackMin: 3,
+    attackMax: 5,
+    defense: 2,
     level: 1,
     exp: 0,
     gold: 0,
@@ -138,7 +139,8 @@ export class GameScene extends Phaser.Scene {
           maxHp: this.playerStats.maxHp,
           mp: this.playerStats.mp,
           maxMp: this.playerStats.maxMp,
-          attack: this.playerStats.attack,
+          attackMin: this.playerStats.attackMin,
+          attackMax: this.playerStats.attackMax,
           defense: this.playerStats.defense,
         };
 
@@ -147,7 +149,7 @@ export class GameScene extends Phaser.Scene {
         // 레벨업 발생 시: 표시 데이터 저장 (create() 이후 표시)
         if (result.levelUps > 0) {
           console.log(`GameScene: LEVEL UP! ${this.playerStats.level} -> ${result.updatedStats.level}`);
-          console.log(`GameScene: Stats increased - HP: ${result.updatedStats.maxHp}, MP: ${result.updatedStats.maxMp}, ATK: ${result.updatedStats.attack}, DEF: ${result.updatedStats.defense}`);
+          console.log(`GameScene: Stats increased - HP: ${result.updatedStats.maxHp}, MP: ${result.updatedStats.maxMp}, ATK: ${result.updatedStats.attackMin}-${result.updatedStats.attackMax}, DEF: ${result.updatedStats.defense}`);
 
           // 레벨업 UI에 표시할 데이터 저장
           this.pendingLevelUp = {
@@ -156,7 +158,8 @@ export class GameScene extends Phaser.Scene {
             statChanges: {
               maxHp: result.updatedStats.maxHp - this.playerStats.maxHp,
               maxMp: result.updatedStats.maxMp - this.playerStats.maxMp,
-              attack: result.updatedStats.attack - this.playerStats.attack,
+              attackMin: result.updatedStats.attackMin - this.playerStats.attackMin,
+              attackMax: result.updatedStats.attackMax - this.playerStats.attackMax,
               defense: result.updatedStats.defense - this.playerStats.defense,
             },
           };
@@ -167,7 +170,8 @@ export class GameScene extends Phaser.Scene {
         this.playerStats.exp = result.updatedStats.exp;
         this.playerStats.maxHp = result.updatedStats.maxHp;
         this.playerStats.maxMp = result.updatedStats.maxMp;
-        this.playerStats.attack = result.updatedStats.attack;
+        this.playerStats.attackMin = result.updatedStats.attackMin;
+        this.playerStats.attackMax = result.updatedStats.attackMax;
         this.playerStats.defense = result.updatedStats.defense;
 
         // 레벨업 시 HP/MP 전체 회복
@@ -189,7 +193,8 @@ export class GameScene extends Phaser.Scene {
       maxHp: initialStats.maxHp,
       mp: initialStats.mp,
       maxMp: initialStats.maxMp,
-      attack: initialStats.attack,
+      attackMin: initialStats.attackMin,
+      attackMax: initialStats.attackMax,
       defense: initialStats.defense,
       level: initialStats.level,
       exp: initialStats.exp,
@@ -253,7 +258,8 @@ export class GameScene extends Phaser.Scene {
       maxHp: this.playerStats.maxHp,
       mp: this.playerStats.mp,
       maxMp: this.playerStats.maxMp,
-      attack: this.playerStats.attack,
+      attackMin: this.playerStats.attackMin,
+      attackMax: this.playerStats.attackMax,
       defense: this.playerStats.defense,
       level: this.playerStats.level,
       exp: this.playerStats.exp,

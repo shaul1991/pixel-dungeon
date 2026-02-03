@@ -12,7 +12,8 @@ export interface LevelUpDisplayData {
   statChanges: {
     maxHp: number;
     maxMp: number;
-    attack: number;
+    attackMin: number;
+    attackMax: number;
     defense: number;
   };
 }
@@ -116,7 +117,7 @@ export class LevelUpUI extends Phaser.GameObjects.Container {
     // 스탯 증가량 텍스트
     const statsLines = [
       `HP +${data.statChanges.maxHp}  MP +${data.statChanges.maxMp}`,
-      `ATK +${data.statChanges.attack}  DEF +${data.statChanges.defense}`,
+      `ATK +${data.statChanges.attackMin}-${data.statChanges.attackMax}  DEF +${data.statChanges.defense}`,
     ];
     this.statsText.setText(statsLines.join('\n'));
 

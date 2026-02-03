@@ -3,7 +3,8 @@
     "id": "slime",
     "name": "슬라임",
     "hp": 20,
-    "attack": 5,
+    "attackMin": 3,
+    "attackMax": 7,
     "defense": 2,
     "exp": 10,
     "gold": 5
