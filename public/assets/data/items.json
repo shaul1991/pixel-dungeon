@@ -1,0 +1,66 @@
+{
+  "health_potion_small": {
+    "id": "health_potion_small",
+    "name": "작은 체력 포션",
+    "description": "HP를 30 회복한다.",
+    "category": "consumable",
+    "rarity": "common",
+    "stackable": true,
+    "effect": {
+      "type": "heal_hp",
+      "value": 30
+    },
+    "dropRate": 0.3
+  },
+  "health_potion_medium": {
+    "id": "health_potion_medium",
+    "name": "체력 포션",
+    "description": "HP를 60 회복한다.",
+    "category": "consumable",
+    "rarity": "uncommon",
+    "stackable": true,
+    "effect": {
+      "type": "heal_hp",
+      "value": 60
+    },
+    "dropRate": 0.15
+  },
+  "mana_potion_small": {
+    "id": "mana_potion_small",
+    "name": "작은 마나 포션",
+    "description": "MP를 20 회복한다.",
+    "category": "consumable",
+    "rarity": "common",
+    "stackable": true,
+    "effect": {
+      "type": "heal_mp",
+      "value": 20
+    },
+    "dropRate": 0.25
+  },
+  "mana_potion_medium": {
+    "id": "mana_potion_medium",
+    "name": "마나 포션",
+    "description": "MP를 40 회복한다.",
+    "category": "consumable",
+    "rarity": "uncommon",
+    "stackable": true,
+    "effect": {
+      "type": "heal_mp",
+      "value": 40
+    },
+    "dropRate": 0.1
+  },
+  "antidote": {
+    "id": "antidote",
+    "name": "해독제",
+    "description": "독 상태를 치료한다.",
+    "category": "consumable",
+    "rarity": "common",
+    "stackable": true,
+    "effect": {
+      "type": "cure_poison"
+    },
+    "dropRate": 0.1
+  }
+}

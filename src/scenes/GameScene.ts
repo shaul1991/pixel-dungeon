@@ -11,11 +11,14 @@ import { SaveSystem } from '../systems/SaveSystem';
 import type { SaveData } from '../systems/SaveSystem';
 import { LevelSystem } from '../systems/LevelSystem';
 import type { PlayerStats as LevelPlayerStats } from '../systems/LevelSystem';
+import { InventorySystem } from '../systems/InventorySystem';
 import { DialogBox } from '../ui/DialogBox';
 import { StatusUI } from '../ui/StatusUI';
 import { LevelUpUI } from '../ui/LevelUpUI';
 import type { LevelUpDisplayData } from '../ui/LevelUpUI';
+import { InventoryUI } from '../ui/InventoryUI';
 import type { PlayerData, BattleSceneData } from './BattleScene';
+import type { InventoryItem, Item } from '../types';
 
 interface BattleResultData {
   result: 'win' | 'escape';
@@ -27,6 +30,8 @@ interface BattleResultData {
   // 플레이어 위치 복원용
   playerTileX: number;
   playerTileY: number;
+  // 전투 후 인벤토리 상태
+  inventory?: InventoryItem[];
 }
 
 /** Continue 모드 데이터 (저장된 게임 로드) */
@@ -65,6 +70,10 @@ export class GameScene extends Phaser.Scene {
     gold: 0,
   };
 
+  // 인벤토리
+  private inventory: InventoryItem[] = [];
+  private itemsData!: Record<string, Item>;
+
   // NPC 관련
   private npcs: NPC[] = [];
   private dialogs!: Record<string, string[]>;
@@ -79,6 +88,10 @@ export class GameScene extends Phaser.Scene {
   // 레벨업 UI
   private levelUpUI!: LevelUpUI;
   private pendingLevelUp: LevelUpDisplayData | null = null;
+
+  // 인벤토리 UI
+  private inventoryUI!: InventoryUI;
+  private isInInventory: boolean = false;
 
   // 스테이터스 UI
   private statusUI!: StatusUI;
@@ -109,6 +122,11 @@ export class GameScene extends Phaser.Scene {
         x: saveData.player.tileX,
         y: saveData.player.tileY,
       };
+
+      // 저장된 인벤토리 복원
+      if (saveData.player.inventory) {
+        this.inventory = [...saveData.player.inventory];
+      }
 
       console.log(`GameScene: Restored from save (${SaveSystem.formatSaveTime(saveData.timestamp)})`);
       return;
@@ -180,6 +198,12 @@ export class GameScene extends Phaser.Scene {
           this.playerStats.mp = result.updatedStats.mp;
         }
       }
+
+      // 전투 후 인벤토리 복원
+      if (data.inventory) {
+        this.inventory = data.inventory;
+      }
+
       return;
     }
 
@@ -214,6 +238,9 @@ export class GameScene extends Phaser.Scene {
     // 몬스터 데이터 로드 (랜덤 인카운터용)
     this.monstersData = this.cache.json.get('monsters');
 
+    // 아이템 데이터 로드
+    this.itemsData = this.cache.json.get('items');
+
     this.createTilemap();
     this.createPlayer();
     this.createNPCs();
@@ -225,6 +252,9 @@ export class GameScene extends Phaser.Scene {
 
     // 레벨업 UI 생성
     this.levelUpUI = new LevelUpUI(this);
+
+    // 인벤토리 UI 생성
+    this.inventoryUI = new InventoryUI(this);
 
     // 스테이터스 UI 생성 (상단 UI 영역에 배치 - 음수 Y 좌표)
     this.statusUI = new StatusUI(this, { x: 4, y: -UI_HEIGHT + 2 });
@@ -272,7 +302,7 @@ export class GameScene extends Phaser.Scene {
    */
   private saveGame(): void {
     const pos = this.player.getTilePosition();
-    SaveSystem.save(pos.x, pos.y, this.playerStats);
+    SaveSystem.save(pos.x, pos.y, this.playerStats, this.inventory);
   }
 
   private createTilemap(): void {
@@ -533,8 +563,143 @@ export class GameScene extends Phaser.Scene {
     // ESC 키로 메뉴로 돌아가기
     const escKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
     escKey?.on('down', () => {
-      this.scene.start('MenuScene');
+      if (this.isInInventory) {
+        this.closeInventory();
+      } else {
+        this.scene.start('MenuScene');
+      }
     });
+
+    // I 키로 인벤토리 열기/닫기
+    const iKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.I);
+    iKey?.on('down', () => {
+      if (this.isInDialog) return;
+
+      if (this.isInInventory) {
+        this.closeInventory();
+      } else {
+        this.openInventory();
+      }
+    });
+  }
+
+  /**
+   * 인벤토리 열기
+   */
+  private openInventory(): void {
+    this.isInInventory = true;
+    this.inventoryUI.open(this.inventory);
+    console.log('GameScene: Inventory opened');
+  }
+
+  /**
+   * 인벤토리 닫기
+   */
+  private closeInventory(): void {
+    this.isInInventory = false;
+    this.inventoryUI.close();
+    console.log('GameScene: Inventory closed');
+  }
+
+  /**
+   * 인벤토리에서 아이템 사용
+   */
+  private useItemFromInventory(item: InventoryItem): void {
+    const { inventory: updated, result } = InventorySystem.useItem(this.inventory, item.id);
+
+    if (result.success && result.effect) {
+      this.inventory = updated;
+
+      // 아이템 효과 적용
+      const effectResult = InventorySystem.applyEffect(
+        result.effect,
+        this.playerStats.hp,
+        this.playerStats.maxHp,
+        this.playerStats.mp,
+        this.playerStats.maxMp
+      );
+
+      this.playerStats.hp = effectResult.hp;
+      this.playerStats.mp = effectResult.mp;
+
+      // UI 업데이트
+      this.updateStatusUI();
+      this.inventoryUI.setItems(this.inventory);
+
+      // 자동 저장
+      this.saveGame();
+
+      console.log(`GameScene: ${result.message} - ${effectResult.message}`);
+    }
+  }
+
+  /**
+   * 인벤토리에서 아이템 버리기
+   */
+  private dropItemFromInventory(item: InventoryItem): void {
+    const { inventory: updated, success } = InventorySystem.removeItem(this.inventory, item.id, 1);
+
+    if (success) {
+      this.inventory = updated;
+      this.inventoryUI.setItems(this.inventory);
+      this.saveGame();
+      console.log(`GameScene: ${item.name} 버림`);
+    }
+  }
+
+  /**
+   * 아이템 획득 (전투 보상 등)
+   */
+  public addItemToInventory(item: Item, quantity: number = 1): boolean {
+    const { inventory: updated, result } = InventorySystem.addItem(this.inventory, item, quantity);
+    this.inventory = updated;
+
+    if (result.success) {
+      console.log(`GameScene: ${result.message}`);
+      this.saveGame();
+    }
+
+    return result.success;
+  }
+
+  /**
+   * 인벤토리 UI 입력 처리
+   */
+  private handleInventoryInput(input: { direction: string | null; action: boolean; cancel: boolean }): void {
+    // 방향키로 선택 이동
+    if (input.direction) {
+      this.inventoryUI.moveSelection(input.direction as 'up' | 'down' | 'left' | 'right');
+    }
+
+    // Z/Enter로 확인
+    if (input.action) {
+      const result = this.inventoryUI.confirm();
+      if (result) {
+        switch (result.action) {
+          case 'use':
+            if (result.item) {
+              this.useItemFromInventory(result.item);
+            }
+            break;
+          case 'drop':
+            if (result.item) {
+              this.dropItemFromInventory(result.item);
+            }
+            break;
+          case 'close':
+            this.closeInventory();
+            break;
+        }
+      }
+    }
+
+    // X/Escape로 취소/닫기
+    if (input.cancel) {
+      const shouldClose = this.inventoryUI.cancel();
+      if (shouldClose) {
+        this.closeInventory();
+      }
+    }
   }
 
   private showDebugInfo(): void {
@@ -555,14 +720,17 @@ export class GameScene extends Phaser.Scene {
     const facing = this.player.getFacingTile();
     const facingNpc = this.findNPCAt(facing.x, facing.y);
     const onGrass = this.isGrassTile(pos.x, pos.y);
+    const itemCount = this.inventory.length;
+    const itemTypes = Object.keys(this.itemsData).length;
 
     this.debugText.setText([
       `Map: ${this.map.width}x${this.map.height} tiles`,
       `Player: (${pos.x}, ${pos.y}) HP: ${this.playerStats.hp}/${this.playerStats.maxHp}`,
+      `Inventory: ${itemCount}/20 (${itemTypes} types available)`,
       `Facing: (${facing.x}, ${facing.y}) ${this.player.getDirection()}`,
       onGrass ? '[풀숲] 랜덤 인카운터 가능!' : '',
       facingNpc ? `NPC: ${facingNpc.getName()}` : '',
-      this.isInDialog ? '[대화 중] Z: 진행' : 'WASD/Arrow: 이동 | ESC: 메뉴',
+      this.isInDialog ? '[대화 중] Z: 진행' : this.isInInventory ? '[인벤토리]' : 'I: 인벤토리 | ESC: 메뉴',
     ].filter(Boolean).join('\n'));
   }
 
@@ -610,6 +778,8 @@ export class GameScene extends Phaser.Scene {
       monsterTileY: -1,
       playerTileX: playerPos.x,
       playerTileY: playerPos.y,
+      // 인벤토리 전달
+      inventory: this.inventory,
     };
 
     console.log(`GameScene: Starting random battle with ${monsterConfig.name}`);
@@ -629,6 +799,12 @@ export class GameScene extends Phaser.Scene {
       if (DEBUG) {
         this.updateDebugInfo();
       }
+      return;
+    }
+
+    // 인벤토리 열려 있으면 인벤토리 입력 처리
+    if (this.isInInventory) {
+      this.handleInventoryInput(input);
       return;
     }
 

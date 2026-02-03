@@ -5,6 +5,7 @@
  */
 
 import type { PlayerData } from '../scenes/BattleScene';
+import type { InventoryItem } from '../types';
 
 /**
  * 저장할 플레이어 스탯 (PlayerData + 레벨 시스템 데이터)
@@ -16,7 +17,7 @@ export interface SavePlayerStats extends PlayerData {
 }
 
 /** 저장 데이터 버전 (호환성 관리용) */
-const SAVE_VERSION = '1.2.0';
+const SAVE_VERSION = '1.3.0';
 
 /** LocalStorage 키 */
 const SAVE_KEY = 'pixel-dungeon-save';
@@ -37,6 +38,8 @@ export interface SaveData {
     tileY: number;
     /** 플레이어 스탯 (레벨/경험치/골드 포함) */
     stats: SavePlayerStats;
+    /** 인벤토리 (v1.3.0+) */
+    inventory?: InventoryItem[];
   };
 }
 
@@ -49,9 +52,15 @@ export class SaveSystem {
    * @param tileX 플레이어 타일 X 좌표
    * @param tileY 플레이어 타일 Y 좌표
    * @param stats 플레이어 스탯
+   * @param inventory 인벤토리 (선택적)
    * @returns 저장 성공 여부
    */
-  static save(tileX: number, tileY: number, stats: SavePlayerStats): boolean {
+  static save(
+    tileX: number,
+    tileY: number,
+    stats: SavePlayerStats,
+    inventory?: InventoryItem[]
+  ): boolean {
     try {
       const saveData: SaveData = {
         version: SAVE_VERSION,
@@ -60,6 +69,7 @@ export class SaveSystem {
           tileX,
           tileY,
           stats: { ...stats },
+          inventory: inventory ? [...inventory] : [],
         },
       };
 

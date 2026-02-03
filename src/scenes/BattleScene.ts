@@ -2,7 +2,9 @@ import Phaser from 'phaser';
 import { UI_HEIGHT } from '../config';
 import { BattleUI } from '../ui/BattleUI';
 import { BattleSystem } from '../systems/BattleSystem';
+import { InventorySystem } from '../systems/InventorySystem';
 import type { MonsterConfig } from '../entities/Monster';
+import type { InventoryItem } from '../types';
 
 export interface PlayerData {
   hp: number;
@@ -22,6 +24,8 @@ export interface BattleSceneData {
   // 플레이어 위치 (전투 후 복원용)
   playerTileX: number;
   playerTileY: number;
+  // 인벤토리
+  inventory: InventoryItem[];
 }
 
 export type BattleResult = 'win' | 'lose' | 'escape';
@@ -37,6 +41,18 @@ export class BattleScene extends Phaser.Scene {
   private currentTurn: 'player' | 'monster' = 'player';
   private battleUI!: BattleUI;
   private isProcessing: boolean = false;
+
+  // 인벤토리
+  private inventory: InventoryItem[] = [];
+  private isInItemMenu: boolean = false;
+  private itemMenuIndex: number = 0;
+  private consumableItems: InventoryItem[] = [];
+
+  // 아이템 메뉴 UI
+  private itemMenuContainer!: Phaser.GameObjects.Container;
+  private itemMenuTexts: Phaser.GameObjects.Text[] = [];
+  private itemMenuSelector!: Phaser.GameObjects.Graphics;
+  private cancelKey!: Phaser.Input.Keyboard.Key;
 
   // 스프라이트
   private playerSprite!: Phaser.GameObjects.Sprite;
@@ -59,6 +75,12 @@ export class BattleScene extends Phaser.Scene {
     this.playerTileY = data.playerTileY;
     this.currentTurn = 'player';
     this.isProcessing = false;
+
+    // 인벤토리 초기화
+    this.inventory = data.inventory ? [...data.inventory.map((item) => ({ ...item }))] : [];
+    this.isInItemMenu = false;
+    this.itemMenuIndex = 0;
+    this.consumableItems = InventorySystem.getConsumables(this.inventory);
   }
 
   create(): void {
@@ -80,6 +102,14 @@ export class BattleScene extends Phaser.Scene {
 
     // 입력 설정
     this.setupInput();
+
+    // 아이템 메뉴 활성화 (소비 아이템이 있는 경우)
+    if (this.consumableItems.length > 0) {
+      this.battleUI.setMenuEnabled('item', true);
+    }
+
+    // 아이템 메뉴 UI 생성
+    this.createItemMenu();
 
     // 전투 시작 메시지
     this.battleUI.showMessage(`${this.monsterData.name}이(가) 나타났다!`, 1500).then(() => {
@@ -140,6 +170,7 @@ export class BattleScene extends Phaser.Scene {
 
     this.cursors = keyboard.createCursorKeys();
     this.actionKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
+    this.cancelKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X);
 
     // WASD 추가 지원
     const wKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
@@ -161,11 +192,27 @@ export class BattleScene extends Phaser.Scene {
     // 액션 키 입력 처리
     this.actionKey.on('down', () => this.handleAction());
     keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE).on('down', () => this.handleAction());
+
+    // 취소 키 입력 처리
+    this.cancelKey.on('down', () => this.handleCancel());
   }
 
   private handleMenuInput(direction: 'up' | 'down' | 'left' | 'right'): void {
     if (this.isProcessing || this.currentTurn !== 'player') return;
 
+    // 아이템 메뉴 모드
+    if (this.isInItemMenu) {
+      if (direction === 'up' && this.itemMenuIndex > 0) {
+        this.itemMenuIndex--;
+        this.updateItemMenuSelection();
+      } else if (direction === 'down' && this.itemMenuIndex < this.consumableItems.length - 1) {
+        this.itemMenuIndex++;
+        this.updateItemMenuSelection();
+      }
+      return;
+    }
+
+    // 일반 메뉴 모드
     switch (direction) {
       case 'up':
         this.battleUI.navigateUp();
@@ -184,6 +231,15 @@ export class BattleScene extends Phaser.Scene {
 
   private handleAction(): void {
     if (this.isProcessing || this.currentTurn !== 'player') return;
+
+    // 아이템 메뉴 모드에서 선택
+    if (this.isInItemMenu) {
+      const selectedItem = this.consumableItems[this.itemMenuIndex];
+      if (selectedItem) {
+        this.useItemInBattle(selectedItem);
+      }
+      return;
+    }
 
     const action = this.battleUI.getSelectedAction();
     const isEnabled = this.battleUI.isSelectedEnabled();
@@ -204,12 +260,168 @@ export class BattleScene extends Phaser.Scene {
         // MVP에서 비활성화
         break;
       case 'item':
-        // MVP에서 비활성화
+        this.showItemMenu();
         break;
       case 'escape':
         this.tryEscape();
         break;
     }
+  }
+
+  private handleCancel(): void {
+    if (this.isProcessing || this.currentTurn !== 'player') return;
+
+    // 아이템 메뉴에서 취소
+    if (this.isInItemMenu) {
+      this.hideItemMenu();
+    }
+  }
+
+  private createItemMenu(): void {
+    const boxX = 10;
+    const boxY = 100;
+    const boxWidth = 180;
+    const itemHeight = 20;
+    const maxItems = 5;
+    const boxHeight = itemHeight * maxItems + 20;
+
+    this.itemMenuContainer = this.add.container(0, 0);
+    this.itemMenuContainer.setDepth(150);
+
+    // 배경
+    const bg = this.add.graphics();
+    bg.fillStyle(0x1a1a2e, 0.95);
+    bg.fillRect(boxX, boxY, boxWidth, boxHeight);
+    bg.lineStyle(2, 0x3a3a5c, 1);
+    bg.strokeRect(boxX, boxY, boxWidth, boxHeight);
+    this.itemMenuContainer.add(bg);
+
+    // 타이틀
+    const titleText = this.add.text(boxX + 10, boxY + 5, '아이템', {
+      fontSize: '10px',
+      color: '#ffcd75',
+      fontFamily: 'monospace',
+    });
+    this.itemMenuContainer.add(titleText);
+
+    // 선택 표시자
+    this.itemMenuSelector = this.add.graphics();
+    this.itemMenuSelector.fillStyle(0xffcd75, 0.3);
+    this.itemMenuContainer.add(this.itemMenuSelector);
+
+    // 아이템 텍스트 (미리 생성)
+    this.itemMenuTexts = [];
+    for (let i = 0; i < maxItems; i++) {
+      const text = this.add.text(boxX + 20, boxY + 22 + i * itemHeight, '', {
+        fontSize: '9px',
+        color: '#e8e8e8',
+        fontFamily: 'monospace',
+      });
+      this.itemMenuTexts.push(text);
+      this.itemMenuContainer.add(text);
+    }
+
+    // 초기에는 숨김
+    this.itemMenuContainer.setVisible(false);
+  }
+
+  private showItemMenu(): void {
+    // 소비 아이템 목록 갱신
+    this.consumableItems = InventorySystem.getConsumables(this.inventory);
+
+    if (this.consumableItems.length === 0) {
+      this.battleUI.showMessage('사용할 아이템이 없습니다!', 800).then(() => {
+        this.battleUI.hideMessage();
+      });
+      return;
+    }
+
+    // 아이템 목록 표시 (최대 5개)
+    const displayCount = Math.min(this.consumableItems.length, 5);
+    for (let i = 0; i < this.itemMenuTexts.length; i++) {
+      if (i < displayCount) {
+        const item = this.consumableItems[i];
+        this.itemMenuTexts[i].setText(`${item.name} x${item.quantity}`);
+        this.itemMenuTexts[i].setVisible(true);
+      } else {
+        this.itemMenuTexts[i].setVisible(false);
+      }
+    }
+
+    this.itemMenuIndex = 0;
+    this.updateItemMenuSelection();
+    this.isInItemMenu = true;
+    this.itemMenuContainer.setVisible(true);
+    this.battleUI.hideMenu();
+  }
+
+  private hideItemMenu(): void {
+    this.isInItemMenu = false;
+    this.itemMenuContainer.setVisible(false);
+    this.battleUI.showMenu();
+  }
+
+  private updateItemMenuSelection(): void {
+    const boxX = 10;
+    const boxY = 100;
+    const boxWidth = 180;
+    const itemHeight = 20;
+
+    this.itemMenuSelector.clear();
+    this.itemMenuSelector.fillStyle(0xffcd75, 0.3);
+    this.itemMenuSelector.fillRect(
+      boxX + 5,
+      boxY + 20 + this.itemMenuIndex * itemHeight,
+      boxWidth - 10,
+      itemHeight
+    );
+  }
+
+  private async useItemInBattle(item: InventoryItem): Promise<void> {
+    this.hideItemMenu();
+    this.isProcessing = true;
+
+    // 아이템 사용
+    const { inventory, result } = InventorySystem.useItem(this.inventory, item.id);
+    this.inventory = inventory;
+
+    if (!result.success || !result.effect) {
+      await this.battleUI.showMessage('아이템을 사용할 수 없습니다!', 800);
+      this.isProcessing = false;
+      this.battleUI.showMenu();
+      return;
+    }
+
+    // 효과 적용
+    const effectResult = InventorySystem.applyEffect(
+      result.effect,
+      this.playerData.hp,
+      this.playerData.maxHp,
+      this.playerData.mp,
+      this.playerData.maxMp
+    );
+
+    this.playerData.hp = effectResult.hp;
+    this.playerData.mp = effectResult.mp;
+
+    // UI 업데이트
+    this.battleUI.updatePlayerHp(this.playerData.hp, this.playerData.maxHp);
+    this.battleUI.updatePlayerMp(this.playerData.mp, this.playerData.maxMp);
+
+    // 메시지 표시
+    await this.battleUI.showMessage(`${item.name}을(를) 사용했다! ${effectResult.message}`, 1200);
+
+    // 소비 아이템 목록 갱신
+    this.consumableItems = InventorySystem.getConsumables(this.inventory);
+
+    // 아이템이 없으면 메뉴 비활성화
+    if (this.consumableItems.length === 0) {
+      this.battleUI.setMenuEnabled('item', false);
+    }
+
+    // 몬스터 턴
+    this.currentTurn = 'monster';
+    await this.monsterAttack();
   }
 
   private async playerAttack(): Promise<void> {
@@ -364,6 +576,8 @@ export class BattleScene extends Phaser.Scene {
       // 플레이어 위치 복원용
       playerTileX: this.playerTileX,
       playerTileY: this.playerTileY,
+      // 전투 후 인벤토리 상태
+      inventory: this.inventory,
     };
 
     if (result === 'lose') {

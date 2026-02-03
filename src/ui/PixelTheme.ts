@@ -57,6 +57,7 @@ export const PixelColorStrings = {
   textWhite: '#e8e8e8',
   textGray: '#a0a0a0',
   textDark: '#606060',
+  textYellow: '#f7d87c',
   accentGold: '#ffcd75',
   hpGreen: '#38b764',
   hpYellow: '#f7d87c',
@@ -191,10 +192,11 @@ export function drawPixelBar(
  * 텍스트 스타일 생성 (도트 스타일)
  */
 export function createPixelTextStyle(
-  size: 'small' | 'medium' | 'large' | 'title' = 'medium',
+  size: 'tiny' | 'small' | 'medium' | 'large' | 'title' = 'medium',
   color: string = PixelColorStrings.textWhite
 ): Phaser.Types.GameObjects.Text.TextStyle {
   const sizes = {
+    tiny: '6px',
     small: '8px',
     medium: '10px',
     large: '12px',

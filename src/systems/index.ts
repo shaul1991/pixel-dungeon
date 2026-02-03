@@ -8,3 +8,5 @@ export { EncounterSystem } from './EncounterSystem';
 export type { EncounterResult } from './EncounterSystem';
 export { SaveSystem } from './SaveSystem';
 export type { SaveData } from './SaveSystem';
+export { InventorySystem, MAX_INVENTORY_SLOTS, MAX_STACK_SIZE } from './InventorySystem';
+export type { UseItemResult, AddItemResult } from './InventorySystem';

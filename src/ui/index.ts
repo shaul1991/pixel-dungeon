@@ -5,4 +5,5 @@ export { BattleUI } from './BattleUI';
 export type { BattleAction } from './BattleUI';
 export { StatusUI } from './StatusUI';
 export type { PlayerStatus, StatusUIConfig } from './StatusUI';
+export { InventoryUI } from './InventoryUI';
 export * from './PixelTheme';

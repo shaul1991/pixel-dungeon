@@ -498,4 +498,52 @@ export class BattleUI extends Phaser.GameObjects.Container {
     this.selectedIndex = 0;
     this.updateMenuSelection();
   }
+
+  /**
+   * 특정 메뉴 항목 활성화/비활성화
+   */
+  public setMenuEnabled(action: BattleAction, enabled: boolean): void {
+    const index = this.menuItems.findIndex((item) => item.action === action);
+    if (index === -1) return;
+
+    this.menuItems[index].enabled = enabled;
+
+    // 버튼 시각적 업데이트
+    const button = this.menuButtons[index];
+    if (!button) return;
+
+    button.setData('enabled', enabled);
+
+    // 버튼 배경 다시 그리기
+    const bg = button.getData('bg') as Phaser.GameObjects.Graphics;
+    const color = this.menuItems[index].color;
+    const bgColor = enabled ? color : PixelColors.btnDisabled;
+    const buttonWidth = 105;
+    const buttonHeight = 32;
+
+    bg.clear();
+
+    // 메인 배경
+    bg.fillStyle(bgColor, 1);
+    bg.fillRect(0, 0, buttonWidth, buttonHeight);
+
+    // 3D 효과 - 상단/왼쪽 밝게
+    bg.fillStyle(0xffffff, 0.3);
+    bg.fillRect(0, 0, buttonWidth, 2);
+    bg.fillRect(0, 0, 2, buttonHeight);
+
+    // 3D 효과 - 하단/오른쪽 어둡게
+    bg.fillStyle(0x000000, 0.3);
+    bg.fillRect(0, buttonHeight - 2, buttonWidth, 2);
+    bg.fillRect(buttonWidth - 2, 0, 2, buttonHeight);
+
+    // 테두리
+    bg.lineStyle(1, PixelColors.frameDark, 1);
+    bg.strokeRect(0, 0, buttonWidth, buttonHeight);
+
+    // 텍스트 색상 업데이트
+    const textObj = button.list[1] as Phaser.GameObjects.Text;
+    const textColor = enabled ? PixelColorStrings.textWhite : PixelColorStrings.textDark;
+    textObj.setColor(textColor);
+  }
 }

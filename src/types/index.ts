@@ -94,6 +94,16 @@ export type ItemCategory = 'weapon' | 'armor' | 'consumable' | 'material' | 'key
 /** Item rarity */
 export type ItemRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
 
+/** Item effect types */
+export type ItemEffectType = 'heal_hp' | 'heal_mp' | 'cure_poison' | 'buff_attack' | 'buff_defense';
+
+/** Item effect */
+export interface ItemEffect {
+  type: ItemEffectType;
+  value?: number;
+  duration?: number;
+}
+
 /** Item data */
 export interface Item {
   id: string;
@@ -104,6 +114,12 @@ export interface Item {
   stackable: boolean;
   quantity: number;
   stats?: Partial<Stats>;
+  effect?: ItemEffect;
+}
+
+/** Inventory item (Item with quantity tracking) */
+export interface InventoryItem extends Item {
+  quantity: number;
 }
 
 // ============ Dungeon Types ============

@@ -4,6 +4,7 @@ import type { Direction } from '../entities/Player';
 export interface InputState {
   direction: Direction | null;
   action: boolean;
+  cancel: boolean;
 }
 
 export class InputController {
@@ -17,6 +18,7 @@ export class InputController {
   };
   private actionKey!: Phaser.Input.Keyboard.Key; // Space 또는 Z
   private actionKeyZ!: Phaser.Input.Keyboard.Key;
+  private cancelKeyX!: Phaser.Input.Keyboard.Key; // X 키 (취소)
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
@@ -45,6 +47,9 @@ export class InputController {
     // 액션 키 설정 (Space, Z)
     this.actionKey = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     this.actionKeyZ = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
+
+    // 취소 키 설정 (X)
+    this.cancelKeyX = keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X);
   }
 
   /**
@@ -55,6 +60,7 @@ export class InputController {
     const result: InputState = {
       direction: null,
       action: false,
+      cancel: false,
     };
 
     // 방향 입력 확인 (우선순위: 위, 아래, 왼쪽, 오른쪽)
@@ -70,6 +76,9 @@ export class InputController {
 
     // 액션 키 확인 (justDown으로 한 번만 인식)
     result.action = this.isActionPressed();
+
+    // 취소 키 확인
+    result.cancel = this.isCancelPressed();
 
     return result;
   }
@@ -95,6 +104,10 @@ export class InputController {
       Phaser.Input.Keyboard.JustDown(this.actionKey) ||
       Phaser.Input.Keyboard.JustDown(this.actionKeyZ)
     );
+  }
+
+  private isCancelPressed(): boolean {
+    return Phaser.Input.Keyboard.JustDown(this.cancelKeyX);
   }
 
   /**

@@ -46,12 +46,13 @@ function createPlayerData(overrides: Partial<SavePlayerStats> = {}): SavePlayerS
 // 테스트용 저장 데이터 생성
 function createSaveData(overrides: Partial<SaveData> = {}): SaveData {
   return {
-    version: '1.2.0',
+    version: '1.3.0',
     timestamp: Date.now(),
     player: {
       tileX: 5,
       tileY: 5,
       stats: createPlayerData(),
+      inventory: [],
     },
     ...overrides,
   };
@@ -86,7 +87,7 @@ describe('SaveSystem', () => {
       expect(savedData.player.tileX).toBe(5);
       expect(savedData.player.tileY).toBe(7);
       expect(savedData.player.stats.hp).toBe(100);
-      expect(savedData.version).toBe('1.2.0');
+      expect(savedData.version).toBe('1.3.0');
     });
 
     it('should include timestamp in save data', () => {
@@ -111,6 +112,41 @@ describe('SaveSystem', () => {
       const result = SaveSystem.save(0, 0, stats);
 
       expect(result).toBe(false);
+    });
+
+    it('should save inventory data', () => {
+      const stats = createPlayerData();
+      const inventory = [
+        {
+          id: 'health_potion',
+          name: '체력 포션',
+          description: 'HP를 회복한다.',
+          category: 'consumable' as const,
+          rarity: 'common' as const,
+          stackable: true,
+          quantity: 3,
+        },
+      ];
+      const result = SaveSystem.save(5, 7, stats, inventory);
+
+      expect(result).toBe(true);
+
+      const savedData = JSON.parse(
+        localStorageMock.setItem.mock.calls[0][1]
+      ) as SaveData;
+      expect(savedData.player.inventory).toHaveLength(1);
+      expect(savedData.player.inventory?.[0].id).toBe('health_potion');
+      expect(savedData.player.inventory?.[0].quantity).toBe(3);
+    });
+
+    it('should save empty inventory when not provided', () => {
+      const stats = createPlayerData();
+      SaveSystem.save(0, 0, stats);
+
+      const savedData = JSON.parse(
+        localStorageMock.setItem.mock.calls[0][1]
+      ) as SaveData;
+      expect(savedData.player.inventory).toEqual([]);
     });
   });
 
@@ -271,6 +307,12 @@ describe('SaveSystem', () => {
     });
 
     it('should return true for compatible minor version', () => {
+      const saveData = createSaveData({ version: '1.3.0' });
+
+      expect(SaveSystem.isValidSaveData(saveData)).toBe(true);
+    });
+
+    it('should return true for older compatible minor version', () => {
       const saveData = createSaveData({ version: '1.2.0' });
 
       expect(SaveSystem.isValidSaveData(saveData)).toBe(true);

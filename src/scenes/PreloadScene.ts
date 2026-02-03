@@ -144,5 +144,8 @@ export class PreloadScene extends Phaser.Scene {
 
     // 몬스터 데이터 로드
     this.load.json('monsters', 'assets/data/monsters.json');
+
+    // 아이템 데이터 로드
+    this.load.json('items', 'assets/data/items.json');
   }
 }
