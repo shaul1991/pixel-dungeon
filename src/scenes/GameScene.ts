@@ -665,10 +665,10 @@ export class GameScene extends Phaser.Scene {
   /**
    * 인벤토리 UI 입력 처리
    */
-  private handleInventoryInput(input: { direction: string | null; action: boolean; cancel: boolean }): void {
-    // 방향키로 선택 이동
-    if (input.direction) {
-      this.inventoryUI.moveSelection(input.direction as 'up' | 'down' | 'left' | 'right');
+  private handleInventoryInput(input: { directionJustPressed: string | null; action: boolean; cancel: boolean }): void {
+    // 방향키로 선택 이동 (JustPressed로 한 번씩 이동)
+    if (input.directionJustPressed) {
+      this.inventoryUI.moveSelection(input.directionJustPressed as 'up' | 'down' | 'left' | 'right');
     }
 
     // Z/Enter로 확인

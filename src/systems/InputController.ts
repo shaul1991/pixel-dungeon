@@ -3,6 +3,8 @@ import type { Direction } from '../entities/Player';
 
 export interface InputState {
   direction: Direction | null;
+  /** 메뉴/UI 네비게이션용 (한 번만 인식) */
+  directionJustPressed: Direction | null;
   action: boolean;
   cancel: boolean;
 }
@@ -59,11 +61,13 @@ export class InputController {
   public update(): InputState {
     const result: InputState = {
       direction: null,
+      directionJustPressed: null,
       action: false,
       cancel: false,
     };
 
     // 방향 입력 확인 (우선순위: 위, 아래, 왼쪽, 오른쪽)
+    // isDown: 누르고 있는 동안 계속 감지 (이동용)
     if (this.isUpPressed()) {
       result.direction = 'up';
     } else if (this.isDownPressed()) {
@@ -72,6 +76,17 @@ export class InputController {
       result.direction = 'left';
     } else if (this.isRightPressed()) {
       result.direction = 'right';
+    }
+
+    // JustDown: 눌렀을 때 한 번만 감지 (메뉴/UI 네비게이션용)
+    if (this.isUpJustPressed()) {
+      result.directionJustPressed = 'up';
+    } else if (this.isDownJustPressed()) {
+      result.directionJustPressed = 'down';
+    } else if (this.isLeftJustPressed()) {
+      result.directionJustPressed = 'left';
+    } else if (this.isRightJustPressed()) {
+      result.directionJustPressed = 'right';
     }
 
     // 액션 키 확인 (justDown으로 한 번만 인식)
@@ -97,6 +112,34 @@ export class InputController {
 
   private isRightPressed(): boolean {
     return this.cursors?.right?.isDown || this.wasd?.D?.isDown || false;
+  }
+
+  private isUpJustPressed(): boolean {
+    return (
+      Phaser.Input.Keyboard.JustDown(this.cursors?.up) ||
+      Phaser.Input.Keyboard.JustDown(this.wasd?.W)
+    );
+  }
+
+  private isDownJustPressed(): boolean {
+    return (
+      Phaser.Input.Keyboard.JustDown(this.cursors?.down) ||
+      Phaser.Input.Keyboard.JustDown(this.wasd?.S)
+    );
+  }
+
+  private isLeftJustPressed(): boolean {
+    return (
+      Phaser.Input.Keyboard.JustDown(this.cursors?.left) ||
+      Phaser.Input.Keyboard.JustDown(this.wasd?.A)
+    );
+  }
+
+  private isRightJustPressed(): boolean {
+    return (
+      Phaser.Input.Keyboard.JustDown(this.cursors?.right) ||
+      Phaser.Input.Keyboard.JustDown(this.wasd?.D)
+    );
   }
 
   private isActionPressed(): boolean {
