@@ -8,7 +8,7 @@
 
 | 총 버그 | 수정됨 | 미수정 | 검증 완료 |
 |--------|-------|-------|----------|
-| 3 | 3 | 0 | 3 |
+| 4 | 4 | 0 | 3 |
 
 ---
 
@@ -198,10 +198,66 @@ private createPlayer(): void {
 
 ---
 
+### BUG-004: 몬스터 HP 바 렌더링 오류
+
+| 항목 | 내용 |
+|------|------|
+| **상태** | ✅ 수정됨 |
+| **우선순위** | 높음 |
+| **발견일** | 2026-02-04 |
+| **수정일** | 2026-02-04 |
+| **검증** | ⏳ 대기 |
+
+#### 증상
+- 몬스터를 공격할 때 HP 바가 거의 가득 차 있는 것처럼 보임
+- 여러 번 공격해도 HP 바가 제대로 줄어들지 않는 것처럼 보임
+- 실제 데미지 계산은 정상이나 시각적 표시만 오류
+
+#### 원인
+1. `BattleScene.ts`에서 몬스터 HP 바 업데이트 시 잘못된 max HP 계산
+2. `updateMonsterHp(this.monsterData.hp, this.monsterData.hp + damage)` 호출
+3. 공격 후 `monsterData.hp`는 이미 감소된 상태이므로, `hp + damage`는 공격 전 HP일 뿐 원래 최대 HP가 아님
+4. 예: 최대 HP 20인 몬스터
+   - 1차 공격 (4 데미지): `updateMonsterHp(16, 20)` ✓ 정상
+   - 2차 공격 (3 데미지): `updateMonsterHp(13, 16)` ✗ 오류 (max가 16이 되어 81% 표시)
+   - 3차 공격 (4 데미지): `updateMonsterHp(9, 13)` ✗ 오류 (max가 13이 되어 69% 표시)
+
+#### 수정 내용
+```typescript
+// BattleScene.ts - 원래 최대 HP 저장용 필드 추가
+private monsterMaxHp!: number;
+
+// init()에서 원래 최대 HP 저장
+init(data: BattleSceneData): void {
+  // ...
+  this.monsterMaxHp = data.monster.hp; // 원래 최대 HP 저장
+}
+
+// HP 바 업데이트 시 저장된 최대 HP 사용
+this.battleUI.updateMonsterHp(this.monsterData.hp, this.monsterMaxHp);
+```
+
+#### 기대 결과
+- [x] 공격 후 HP 바가 정확한 비율로 감소
+- [x] 여러 번 공격해도 HP 바가 일관되게 표시
+
+#### 관련 파일
+- `src/scenes/BattleScene.ts`
+
+---
+
+### BUG-004 검증 ⏳
+- [ ] 몬스터 첫 공격 후 HP 바 확인
+- [ ] 연속 공격 시 HP 바가 정확히 감소하는지 확인
+- [ ] HP 바 색상 변화 (녹색 → 노랑 → 빨강) 확인
+
+---
+
 ## 변경 이력
 
 | 날짜 | 변경 |
 |------|------|
+| 2026-02-04 | BUG-004 추가 (몬스터 HP 바 렌더링 오류) |
 | 2026-02-03 | BUG-001, BUG-002, BUG-003 검증 완료 |
 | 2026-02-03 | BUG-001, BUG-002, BUG-003 수정 완료 |
 | 2026-02-03 | 버그 리포트 문서 생성 |
