@@ -9,9 +9,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Added
-- 레벨업 시스템 (예정)
 - 인벤토리 시스템 (예정)
 - 스킬 시스템 활성화 (예정)
+
+---
+
+## [0.2.0] - 2026-02-03
+
+### Added
+- **레벨업 시스템**
+  - `LevelSystem.ts` - 경험치/레벨업 로직
+  - 경험치 테이블 (레벨 1-10, 최대 레벨 10)
+  - 레벨업 시 스탯 증가 (HP +10, MP +5, Attack +2, Defense +1)
+  - 레벨업 시 HP/MP 전체 회복
+  - 다중 레벨업 지원 (한 번에 여러 레벨 상승)
+  - LevelSystem 단위 테스트 30개
+
+- **GameScene 경험치 연동**
+  - 전투 승리 시 경험치 획득
+  - 레벨업 감지 및 스탯 업데이트
+  - 저장 데이터에 레벨/경험치/골드 포함
+
+- **레벨업 UI**
+  - 레벨업 축하 이펙트 (황금색 텍스트)
+  - 스탯 증가량 표시
+  - 트윈 애니메이션 (확대/축소, 페이드아웃)
+
+### Changed
+- **SaveSystem 업데이트**
+  - SaveData 버전 1.0.0 → 1.1.0
+  - `SavePlayerStats` 타입 추가 (level, exp, gold 포함)
+  - 저장 데이터 유효성 검증 강화
 
 ---
 
@@ -107,5 +135,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 0.2.0 | 2026-02-03 | 레벨업 시스템, 경험치 연동, 레벨업 UI |
 | 0.1.1 | 2026-02-03 | 저장/로드, 픽셀 테마, NPC 회복, 워크플로우 개선 |
 | 0.1.0 | 2026-02-03 | 프로토타입 - 기본 게임플레이 |

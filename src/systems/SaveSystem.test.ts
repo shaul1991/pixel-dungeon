@@ -3,8 +3,7 @@
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { SaveSystem } from './SaveSystem';
-import type { SaveData } from './SaveSystem';
-import type { PlayerData } from '../scenes/BattleScene';
+import type { SaveData, SavePlayerStats } from './SaveSystem';
 
 // localStorage 모킹
 const localStorageMock = (() => {
@@ -28,7 +27,7 @@ const localStorageMock = (() => {
 })();
 
 // 테스트용 플레이어 데이터 생성
-function createPlayerData(overrides: Partial<PlayerData> = {}): PlayerData {
+function createPlayerData(overrides: Partial<SavePlayerStats> = {}): SavePlayerStats {
   return {
     hp: 100,
     maxHp: 100,
@@ -36,6 +35,9 @@ function createPlayerData(overrides: Partial<PlayerData> = {}): PlayerData {
     maxMp: 50,
     attack: 10,
     defense: 5,
+    level: 1,
+    exp: 0,
+    gold: 0,
     ...overrides,
   };
 }
@@ -43,7 +45,7 @@ function createPlayerData(overrides: Partial<PlayerData> = {}): PlayerData {
 // 테스트용 저장 데이터 생성
 function createSaveData(overrides: Partial<SaveData> = {}): SaveData {
   return {
-    version: '1.0.0',
+    version: '1.1.0',
     timestamp: Date.now(),
     player: {
       tileX: 5,
@@ -83,7 +85,7 @@ describe('SaveSystem', () => {
       expect(savedData.player.tileX).toBe(5);
       expect(savedData.player.tileY).toBe(7);
       expect(savedData.player.stats.hp).toBe(100);
-      expect(savedData.version).toBe('1.0.0');
+      expect(savedData.version).toBe('1.1.0');
     });
 
     it('should include timestamp in save data', () => {

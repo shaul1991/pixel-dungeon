@@ -6,8 +6,17 @@
 
 import type { PlayerData } from '../scenes/BattleScene';
 
+/**
+ * 저장할 플레이어 스탯 (PlayerData + 레벨 시스템 데이터)
+ */
+export interface SavePlayerStats extends PlayerData {
+  level: number;
+  exp: number;
+  gold: number;
+}
+
 /** 저장 데이터 버전 (호환성 관리용) */
-const SAVE_VERSION = '1.0.0';
+const SAVE_VERSION = '1.1.0';
 
 /** LocalStorage 키 */
 const SAVE_KEY = 'pixel-dungeon-save';
@@ -26,8 +35,8 @@ export interface SaveData {
     tileX: number;
     /** 타일 Y 좌표 */
     tileY: number;
-    /** 플레이어 스탯 */
-    stats: PlayerData;
+    /** 플레이어 스탯 (레벨/경험치/골드 포함) */
+    stats: SavePlayerStats;
   };
 }
 
@@ -42,7 +51,7 @@ export class SaveSystem {
    * @param stats 플레이어 스탯
    * @returns 저장 성공 여부
    */
-  static save(tileX: number, tileY: number, stats: PlayerData): boolean {
+  static save(tileX: number, tileY: number, stats: SavePlayerStats): boolean {
     try {
       const saveData: SaveData = {
         version: SAVE_VERSION,
@@ -149,6 +158,9 @@ export class SaveSystem {
     if (typeof stats.maxMp !== 'number') return false;
     if (typeof stats.attack !== 'number') return false;
     if (typeof stats.defense !== 'number') return false;
+    if (typeof stats.level !== 'number') return false;
+    if (typeof stats.exp !== 'number') return false;
+    if (typeof stats.gold !== 'number') return false;
 
     // 버전 호환성 확인 (메이저 버전 일치)
     const savedMajor = save.version.split('.')[0];

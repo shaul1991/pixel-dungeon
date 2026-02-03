@@ -31,6 +31,9 @@ export const PixelColors = {
   // MP 바 색상
   mpBlue: 0x4a90d9,      // MP 색상
 
+  // EXP 바 색상
+  expYellow: 0xf7d87c,   // 경험치 노란색
+
   // 강조 색상
   accentGold: 0xffcd75,  // 금색 강조
   accentRed: 0xe84545,   // 빨강 강조

@@ -33,6 +33,7 @@ export interface StatusUIConfig {
 export class StatusUI extends Phaser.GameObjects.Container {
   private hpBar: HealthBar;
   private mpBar: HealthBar;
+  private expBar: HealthBar;
   private hpValueText: Phaser.GameObjects.Text;
   private mpValueText: Phaser.GameObjects.Text;
   private statsText: Phaser.GameObjects.Text;
@@ -41,6 +42,7 @@ export class StatusUI extends Phaser.GameObjects.Container {
   // 바 크기 설정
   private static readonly BAR_WIDTH = 50;
   private static readonly BAR_HEIGHT = 8;
+  private static readonly EXP_BAR_HEIGHT = 3;
   private static readonly PADDING = 5;
 
   constructor(scene: Phaser.Scene, config: StatusUIConfig) {
@@ -112,6 +114,21 @@ export class StatusUI extends Phaser.GameObjects.Container {
     );
     this.add(this.mpValueText);
 
+    // EXP 바 생성 (노란색 얇은 게이지, 라벨 없음)
+    this.expBar = new HealthBar(scene, {
+      x: 0,
+      y: 0,
+      width: StatusUI.BAR_WIDTH + 20, // HP/MP 라벨 영역까지 확장
+      height: StatusUI.EXP_BAR_HEIGHT,
+      fillColor: PixelColors.expYellow,
+      bgColor: PixelColors.bgDark,
+      borderColor: PixelColors.frameDark,
+      showText: false,
+      segmented: false,
+    });
+    this.expBar.setPosition(StatusUI.PADDING, StatusUI.PADDING + 22);
+    this.add(this.expBar);
+
     // 스탯 텍스트 (ATK/DEF)
     this.statsText = scene.add.text(
       StatusUI.PADDING + 20 + StatusUI.BAR_WIDTH + 50,
@@ -137,7 +154,7 @@ export class StatusUI extends Phaser.GameObjects.Container {
   private createBackground(): Phaser.GameObjects.Graphics {
     const bg = this.scene.add.graphics();
     const width = 180;
-    const height = 28;
+    const height = 32;
 
     // 어두운 배경 (도트 스타일)
     bg.fillStyle(PixelColors.bgMedium, 0.9);
@@ -177,10 +194,18 @@ export class StatusUI extends Phaser.GameObjects.Container {
     // MP 수치 텍스트 업데이트
     this.mpValueText.setText(`${status.mp}/${status.maxMp}`);
 
-    // 스탯 텍스트 업데이트
+    // EXP 바 업데이트
+    if (status.exp !== undefined && status.maxExp !== undefined && status.maxExp > 0) {
+      this.expBar.setValue(status.exp, status.maxExp);
+    } else {
+      this.expBar.setValue(0, 1);
+    }
+
+    // 스탯 텍스트 업데이트 (레벨 포함)
+    const levelText = status.level !== undefined ? `LV${status.level}` : '';
     const lines = [
-      `ATK ${status.attack}`,
-      `DEF ${status.defense}`,
+      `${levelText} ATK${status.attack}`,
+      `DEF${status.defense}`,
     ];
     this.statsText.setText(lines.join('\n'));
   }

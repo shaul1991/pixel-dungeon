@@ -9,8 +9,12 @@ import { InputController } from '../systems/InputController';
 import { EncounterSystem } from '../systems/EncounterSystem';
 import { SaveSystem } from '../systems/SaveSystem';
 import type { SaveData } from '../systems/SaveSystem';
+import { LevelSystem } from '../systems/LevelSystem';
+import type { PlayerStats as LevelPlayerStats } from '../systems/LevelSystem';
 import { DialogBox } from '../ui/DialogBox';
 import { StatusUI } from '../ui/StatusUI';
+import { LevelUpUI } from '../ui/LevelUpUI';
+import type { LevelUpDisplayData } from '../ui/LevelUpUI';
 import type { PlayerData, BattleSceneData } from './BattleScene';
 
 interface BattleResultData {
@@ -47,14 +51,17 @@ export class GameScene extends Phaser.Scene {
   private player!: Player;
   private inputController!: InputController;
 
-  // 플레이어 스탯 (임시 하드코딩)
-  private playerStats: PlayerData = {
+  // 플레이어 스탯 (레벨 시스템 연동)
+  private playerStats: PlayerData & { level: number; exp: number; gold: number } = {
     hp: 100,
     maxHp: 100,
-    mp: 30,
-    maxMp: 30,
-    attack: 15,
+    mp: 50,
+    maxMp: 50,
+    attack: 10,
     defense: 5,
+    level: 1,
+    exp: 0,
+    gold: 0,
   };
 
   // NPC 관련
@@ -67,6 +74,10 @@ export class GameScene extends Phaser.Scene {
   // 대화창
   private dialogBox!: DialogBox;
   private isInDialog: boolean = false;
+
+  // 레벨업 UI
+  private levelUpUI!: LevelUpUI;
+  private pendingLevelUp: LevelUpDisplayData | null = null;
 
   // 스테이터스 UI
   private statusUI!: StatusUI;
@@ -115,6 +126,55 @@ export class GameScene extends Phaser.Scene {
 
       if (data.result === 'win' && data.rewards) {
         console.log(`GameScene: Earned ${data.rewards.exp} EXP, ${data.rewards.gold} Gold`);
+
+        // 골드 적용
+        this.playerStats.gold += data.rewards.gold;
+
+        // 경험치 적용 및 레벨업 처리
+        const levelStats: LevelPlayerStats = {
+          level: this.playerStats.level,
+          exp: this.playerStats.exp,
+          hp: this.playerStats.hp,
+          maxHp: this.playerStats.maxHp,
+          mp: this.playerStats.mp,
+          maxMp: this.playerStats.maxMp,
+          attack: this.playerStats.attack,
+          defense: this.playerStats.defense,
+        };
+
+        const result = LevelSystem.addExperience(levelStats, data.rewards.exp);
+
+        // 레벨업 발생 시: 표시 데이터 저장 (create() 이후 표시)
+        if (result.levelUps > 0) {
+          console.log(`GameScene: LEVEL UP! ${this.playerStats.level} -> ${result.updatedStats.level}`);
+          console.log(`GameScene: Stats increased - HP: ${result.updatedStats.maxHp}, MP: ${result.updatedStats.maxMp}, ATK: ${result.updatedStats.attack}, DEF: ${result.updatedStats.defense}`);
+
+          // 레벨업 UI에 표시할 데이터 저장
+          this.pendingLevelUp = {
+            oldLevel: this.playerStats.level,
+            newLevel: result.updatedStats.level,
+            statChanges: {
+              maxHp: result.updatedStats.maxHp - this.playerStats.maxHp,
+              maxMp: result.updatedStats.maxMp - this.playerStats.maxMp,
+              attack: result.updatedStats.attack - this.playerStats.attack,
+              defense: result.updatedStats.defense - this.playerStats.defense,
+            },
+          };
+        }
+
+        // 스탯 업데이트 (레벨업으로 인한 HP/MP 회복 포함)
+        this.playerStats.level = result.updatedStats.level;
+        this.playerStats.exp = result.updatedStats.exp;
+        this.playerStats.maxHp = result.updatedStats.maxHp;
+        this.playerStats.maxMp = result.updatedStats.maxMp;
+        this.playerStats.attack = result.updatedStats.attack;
+        this.playerStats.defense = result.updatedStats.defense;
+
+        // 레벨업 시 HP/MP 전체 회복
+        if (result.levelUps > 0) {
+          this.playerStats.hp = result.updatedStats.hp;
+          this.playerStats.mp = result.updatedStats.mp;
+        }
       }
       return;
     }
@@ -122,14 +182,18 @@ export class GameScene extends Phaser.Scene {
     // 새 게임 시작 시 초기화
     this.savedPlayerPosition = null;
 
-    // 새 게임: 기본 스탯으로 초기화
+    // 새 게임: LevelSystem의 초기 스탯 사용
+    const initialStats = LevelSystem.createInitialStats();
     this.playerStats = {
-      hp: 100,
-      maxHp: 100,
-      mp: 30,
-      maxMp: 30,
-      attack: 15,
-      defense: 5,
+      hp: initialStats.hp,
+      maxHp: initialStats.maxHp,
+      mp: initialStats.mp,
+      maxMp: initialStats.maxMp,
+      attack: initialStats.attack,
+      defense: initialStats.defense,
+      level: initialStats.level,
+      exp: initialStats.exp,
+      gold: 0,
     };
   }
 
@@ -154,6 +218,9 @@ export class GameScene extends Phaser.Scene {
     // 대화창 생성
     this.dialogBox = new DialogBox(this);
 
+    // 레벨업 UI 생성
+    this.levelUpUI = new LevelUpUI(this);
+
     // 스테이터스 UI 생성 (상단 UI 영역에 배치 - 음수 Y 좌표)
     this.statusUI = new StatusUI(this, { x: 4, y: -UI_HEIGHT + 2 });
     this.updateStatusUI();
@@ -165,12 +232,22 @@ export class GameScene extends Phaser.Scene {
     if (DEBUG) {
       this.showDebugInfo();
     }
+
+    // 전투 후 레벨업이 발생했으면 UI 표시
+    if (this.pendingLevelUp) {
+      // 약간의 지연 후 레벨업 UI 표시 (씬 전환 안정화)
+      this.time.delayedCall(300, () => {
+        this.levelUpUI.show(this.pendingLevelUp!);
+        this.pendingLevelUp = null;
+      });
+    }
   }
 
   /**
    * 스테이터스 UI 업데이트
    */
   private updateStatusUI(): void {
+    const maxExp = LevelSystem.getExpForNextLevel(this.playerStats.level);
     this.statusUI.update({
       hp: this.playerStats.hp,
       maxHp: this.playerStats.maxHp,
@@ -178,6 +255,9 @@ export class GameScene extends Phaser.Scene {
       maxMp: this.playerStats.maxMp,
       attack: this.playerStats.attack,
       defense: this.playerStats.defense,
+      level: this.playerStats.level,
+      exp: this.playerStats.exp,
+      maxExp: maxExp > 0 ? maxExp : 1,
     });
   }
 
@@ -364,14 +444,7 @@ export class GameScene extends Phaser.Scene {
     this.playerStats.mp = this.playerStats.maxMp;
 
     // UI 업데이트
-    this.statusUI.update({
-      hp: this.playerStats.hp,
-      maxHp: this.playerStats.maxHp,
-      mp: this.playerStats.mp,
-      maxMp: this.playerStats.maxMp,
-      attack: this.playerStats.attack,
-      defense: this.playerStats.defense,
-    });
+    this.updateStatusUI();
 
     // 회복 로그
     const healedHp = this.playerStats.hp - prevHp;
