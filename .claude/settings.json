@@ -1,0 +1,66 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm *)",
+      "Bash(npx *)",
+      "Bash(yarn *)",
+      "Bash(pnpm *)",
+      "Bash(bun *)",
+      "Bash(node *)",
+      "Bash(tsc *)",
+      "Bash(vite *)",
+      "Bash(vitest *)",
+      "Bash(eslint *)",
+      "Bash(prettier *)",
+      "Bash(git status)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git branch *)",
+      "Bash(git checkout *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push origin *)",
+      "Bash(gh pr *)",
+      "Bash(gh run *)",
+      "Bash(curl *)",
+      "Bash(jq *)",
+      "Read",
+      "Edit(**)",
+      "Write(**)"
+    ],
+    "deny": [
+      "Bash(rm -rf /)",
+      "Bash(rm -rf *)",
+      "Bash(rm -rf ~)",
+      "Bash(git push --force *)",
+      "Bash(git push * --force)",
+      "Bash(git reset --hard *)",
+      "Edit(.env)",
+      "Edit(.env.*)",
+      "Write(.env)",
+      "Write(.env.*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/post-edit.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/post-git-change.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
