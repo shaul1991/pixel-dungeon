@@ -1,6 +1,11 @@
 import Phaser from 'phaser';
 import { UI_HEIGHT } from '../config';
 import { HealthBar } from './HealthBar';
+import {
+  PixelColors,
+  PixelColorStrings,
+  createPixelTextStyle,
+} from './PixelTheme';
 
 export type BattleAction = 'attack' | 'skill' | 'item' | 'escape';
 
@@ -15,6 +20,7 @@ export class BattleUI extends Phaser.GameObjects.Container {
   private playerHpBar!: HealthBar;
   private playerHpText!: Phaser.GameObjects.Text;
   private playerMpBar!: HealthBar;
+  private playerMpText!: Phaser.GameObjects.Text;
   private playerInfoBox!: Phaser.GameObjects.Graphics;
 
   private menuButtons: Phaser.GameObjects.Container[] = [];
@@ -25,12 +31,12 @@ export class BattleUI extends Phaser.GameObjects.Container {
   private readonly SCREEN_HEIGHT = 320 + UI_HEIGHT; // 352
   private readonly HALF_HEIGHT = (320 + UI_HEIGHT) / 2; // 176
 
-  // 메뉴 아이템 정의 (포켓몬 스타일 색상)
+  // 메뉴 아이템 정의 (도트 스타일 색상)
   private readonly menuItems: { label: string; action: BattleAction; enabled: boolean; color: number }[] = [
-    { label: '공격', action: 'attack', enabled: true, color: 0xf08080 },   // 빨강
-    { label: '스킬', action: 'skill', enabled: false, color: 0xf0c060 },   // 주황
-    { label: '아이템', action: 'item', enabled: false, color: 0x78c078 },  // 초록
-    { label: '도망', action: 'escape', enabled: true, color: 0x60a0c0 },   // 파랑
+    { label: '공격', action: 'attack', enabled: true, color: PixelColors.btnAttack },
+    { label: '스킬', action: 'skill', enabled: false, color: PixelColors.btnSkill },
+    { label: '아이템', action: 'item', enabled: false, color: PixelColors.btnItem },
+    { label: '도망', action: 'escape', enabled: true, color: PixelColors.btnEscape },
   ];
 
   constructor(scene: Phaser.Scene) {
@@ -49,7 +55,7 @@ export class BattleUI extends Phaser.GameObjects.Container {
   }
 
   /**
-   * 몬스터 정보 박스 생성 (왼쪽 상단) - 포켓몬 스타일
+   * 몬스터 정보 박스 생성 (왼쪽 상단) - 도트 스타일
    */
   private createMonsterUI(): void {
     const boxX = 10;
@@ -57,63 +63,65 @@ export class BattleUI extends Phaser.GameObjects.Container {
     const boxWidth = 180;
     const boxHeight = 50;
 
-    // 정보 박스 배경 (그라데이션 느낌의 회색 박스)
+    // 정보 박스 배경 (도트 스타일 - 직각 모서리)
     this.monsterInfoBox = this.scene.add.graphics();
-    this.monsterInfoBox.fillStyle(0xd8d8d0, 1);
-    this.monsterInfoBox.fillRoundedRect(boxX, boxY, boxWidth, boxHeight, 4);
-    // 하단 테두리 (입체감)
-    this.monsterInfoBox.fillStyle(0x808080, 1);
-    this.monsterInfoBox.fillTriangle(
-      boxX, boxY + boxHeight,
-      boxX + boxWidth, boxY + boxHeight,
-      boxX + boxWidth + 15, boxY + boxHeight - 10
-    );
-    this.monsterInfoBox.fillRect(boxX, boxY + boxHeight - 4, boxWidth, 4);
-    // 테두리
-    this.monsterInfoBox.lineStyle(2, 0x404040, 1);
-    this.monsterInfoBox.strokeRoundedRect(boxX, boxY, boxWidth, boxHeight, 4);
+
+    // 메인 배경
+    this.monsterInfoBox.fillStyle(PixelColors.bgLight, 1);
+    this.monsterInfoBox.fillRect(boxX, boxY, boxWidth, boxHeight);
+
+    // 3D 효과 - 상단/왼쪽 밝게
+    this.monsterInfoBox.fillStyle(0xffffff, 0.3);
+    this.monsterInfoBox.fillRect(boxX, boxY, boxWidth, 2);
+    this.monsterInfoBox.fillRect(boxX, boxY, 2, boxHeight);
+
+    // 3D 효과 - 하단/오른쪽 어둡게
+    this.monsterInfoBox.fillStyle(0x000000, 0.3);
+    this.monsterInfoBox.fillRect(boxX, boxY + boxHeight - 2, boxWidth, 2);
+    this.monsterInfoBox.fillRect(boxX + boxWidth - 2, boxY, 2, boxHeight);
+
+    // 외부 테두리
+    this.monsterInfoBox.lineStyle(2, PixelColors.frameMedium, 1);
+    this.monsterInfoBox.strokeRect(boxX, boxY, boxWidth, boxHeight);
     this.add(this.monsterInfoBox);
 
-    // 몬스터 이름
+    // 몬스터 이름 (도트 스타일)
     this.monsterNameText = this.scene.add.text(boxX + 10, boxY + 8, '', {
-      fontSize: '14px',
-      color: '#000000',
-      fontFamily: 'monospace',
+      ...createPixelTextStyle('medium', PixelColorStrings.textWhite),
       fontStyle: 'bold',
     });
     this.add(this.monsterNameText);
 
     // 몬스터 레벨
     this.monsterLevelText = this.scene.add.text(boxX + boxWidth - 50, boxY + 8, 'Lv.1', {
-      fontSize: '12px',
-      color: '#000000',
-      fontFamily: 'monospace',
+      ...createPixelTextStyle('small', PixelColorStrings.textGray),
     });
     this.add(this.monsterLevelText);
 
     // HP 라벨
     const hpLabel = this.scene.add.text(boxX + 10, boxY + 30, 'HP', {
-      fontSize: '10px',
-      color: '#f0a000',
-      fontFamily: 'monospace',
+      ...createPixelTextStyle('small', PixelColorStrings.hpGreen),
       fontStyle: 'bold',
     });
     this.add(hpLabel);
 
-    // 몬스터 HP 바
+    // 몬스터 HP 바 (도트 스타일)
     this.monsterHpBar = new HealthBar(this.scene, {
       x: boxX + 35,
       y: boxY + 28,
       width: 130,
       height: 10,
-      fillColor: 0x00c000,
+      fillColor: PixelColors.hpGreen,
+      bgColor: PixelColors.bgDark,
+      borderColor: PixelColors.frameDark,
       showText: false,
+      segmented: true,
     });
     this.add(this.monsterHpBar);
   }
 
   /**
-   * 플레이어 정보 박스 생성 (오른쪽 중앙) - 포켓몬 스타일
+   * 플레이어 정보 박스 생성 (오른쪽 중앙) - 도트 스타일
    */
   private createPlayerUI(): void {
     const boxX = 260;
@@ -121,90 +129,98 @@ export class BattleUI extends Phaser.GameObjects.Container {
     const boxWidth = 200;
     const boxHeight = 65;
 
-    // 정보 박스 배경
+    // 정보 박스 배경 (도트 스타일 - 직각 모서리)
     this.playerInfoBox = this.scene.add.graphics();
-    this.playerInfoBox.fillStyle(0xd8d8d0, 1);
-    this.playerInfoBox.fillRoundedRect(boxX, boxY, boxWidth, boxHeight, 4);
-    // 왼쪽 상단 테두리 (입체감)
-    this.playerInfoBox.fillStyle(0x808080, 1);
-    this.playerInfoBox.fillTriangle(
-      boxX, boxY,
-      boxX - 15, boxY + 10,
-      boxX, boxY + 10
-    );
-    // 테두리
-    this.playerInfoBox.lineStyle(2, 0x404040, 1);
-    this.playerInfoBox.strokeRoundedRect(boxX, boxY, boxWidth, boxHeight, 4);
+
+    // 메인 배경
+    this.playerInfoBox.fillStyle(PixelColors.bgLight, 1);
+    this.playerInfoBox.fillRect(boxX, boxY, boxWidth, boxHeight);
+
+    // 3D 효과 - 상단/왼쪽 밝게
+    this.playerInfoBox.fillStyle(0xffffff, 0.3);
+    this.playerInfoBox.fillRect(boxX, boxY, boxWidth, 2);
+    this.playerInfoBox.fillRect(boxX, boxY, 2, boxHeight);
+
+    // 3D 효과 - 하단/오른쪽 어둡게
+    this.playerInfoBox.fillStyle(0x000000, 0.3);
+    this.playerInfoBox.fillRect(boxX, boxY + boxHeight - 2, boxWidth, 2);
+    this.playerInfoBox.fillRect(boxX + boxWidth - 2, boxY, 2, boxHeight);
+
+    // 외부 테두리
+    this.playerInfoBox.lineStyle(2, PixelColors.frameMedium, 1);
+    this.playerInfoBox.strokeRect(boxX, boxY, boxWidth, boxHeight);
     this.add(this.playerInfoBox);
 
-    // 플레이어 이름
+    // 플레이어 이름 (도트 스타일)
     this.playerNameText = this.scene.add.text(boxX + 10, boxY + 6, 'Player', {
-      fontSize: '14px',
-      color: '#000000',
-      fontFamily: 'monospace',
+      ...createPixelTextStyle('medium', PixelColorStrings.textWhite),
       fontStyle: 'bold',
     });
     this.add(this.playerNameText);
 
     // 플레이어 레벨
     this.playerLevelText = this.scene.add.text(boxX + boxWidth - 50, boxY + 6, 'Lv.1', {
-      fontSize: '12px',
-      color: '#000000',
-      fontFamily: 'monospace',
+      ...createPixelTextStyle('small', PixelColorStrings.textGray),
     });
     this.add(this.playerLevelText);
 
     // HP 라벨
     const hpLabel = this.scene.add.text(boxX + 10, boxY + 26, 'HP', {
-      fontSize: '10px',
-      color: '#f0a000',
-      fontFamily: 'monospace',
+      ...createPixelTextStyle('small', PixelColorStrings.hpGreen),
       fontStyle: 'bold',
     });
     this.add(hpLabel);
 
-    // 플레이어 HP 바
+    // 플레이어 HP 바 (도트 스타일)
     this.playerHpBar = new HealthBar(this.scene, {
       x: boxX + 35,
       y: boxY + 24,
-      width: 140,
+      width: 100,
       height: 10,
-      fillColor: 0x00c000,
+      fillColor: PixelColors.hpGreen,
+      bgColor: PixelColors.bgDark,
+      borderColor: PixelColors.frameDark,
       showText: false,
+      segmented: true,
     });
     this.add(this.playerHpBar);
 
-    // HP 수치 텍스트
-    this.playerHpText = this.scene.add.text(boxX + boxWidth - 70, boxY + 36, '100/100', {
-      fontSize: '11px',
-      color: '#000000',
-      fontFamily: 'monospace',
+    // HP 수치 텍스트 (바 오른쪽에 표시)
+    this.playerHpText = this.scene.add.text(boxX + 140, boxY + 24, '100/100', {
+      ...createPixelTextStyle('small', PixelColorStrings.hpGreen),
     });
     this.add(this.playerHpText);
 
-    // MP 라벨 (EXP 바 위치에 MP 표시)
-    const mpLabel = this.scene.add.text(boxX + 10, boxY + 48, 'MP', {
-      fontSize: '10px',
-      color: '#0080f0',
-      fontFamily: 'monospace',
+    // MP 라벨
+    const mpLabel = this.scene.add.text(boxX + 10, boxY + 44, 'MP', {
+      ...createPixelTextStyle('small', PixelColorStrings.mpBlue),
       fontStyle: 'bold',
     });
     this.add(mpLabel);
 
-    // 플레이어 MP 바
+    // 플레이어 MP 바 (도트 스타일)
     this.playerMpBar = new HealthBar(this.scene, {
       x: boxX + 35,
-      y: boxY + 46,
-      width: 140,
+      y: boxY + 42,
+      width: 100,
       height: 8,
-      fillColor: 0x0080f0,
+      fillColor: PixelColors.mpBlue,
+      bgColor: PixelColors.bgDark,
+      borderColor: PixelColors.frameDark,
       showText: false,
+      segmented: true,
     });
     this.add(this.playerMpBar);
+
+    // MP 수치 텍스트 (바 오른쪽에 표시)
+    this.playerMpText = this.scene.add.text(boxX + 140, boxY + 40, '30/30', {
+      ...createPixelTextStyle('small', PixelColorStrings.mpBlue),
+    });
+    this.add(this.playerMpText);
   }
 
   /**
-   * 메시지 박스 생성 (왼쪽 하단)
+   * 메시지 박스 생성 (왼쪽 하단) - 도트 스타일
    */
   private createMessageBox(): void {
     const boxX = 10;
@@ -212,24 +228,37 @@ export class BattleUI extends Phaser.GameObjects.Container {
     const boxWidth = 230;
     const boxHeight = 75;
 
-    // 메시지 배경 (테두리 있는 흰색 박스)
+    // 메시지 배경 (도트 스타일 - 직각 모서리)
     this.messageBox = this.scene.add.graphics();
-    this.messageBox.fillStyle(0xf8f8f0, 1);
-    this.messageBox.fillRoundedRect(boxX, boxY, boxWidth, boxHeight, 8);
-    this.messageBox.lineStyle(3, 0x404040, 1);
-    this.messageBox.strokeRoundedRect(boxX, boxY, boxWidth, boxHeight, 8);
-    // 내부 테두리
-    this.messageBox.lineStyle(2, 0xc0a000, 1);
-    this.messageBox.strokeRoundedRect(boxX + 4, boxY + 4, boxWidth - 8, boxHeight - 8, 6);
+
+    // 메인 배경
+    this.messageBox.fillStyle(PixelColors.bgMedium, 0.95);
+    this.messageBox.fillRect(boxX, boxY, boxWidth, boxHeight);
+
+    // 3D 효과 - 내부 밝은 테두리
+    this.messageBox.fillStyle(PixelColors.frameLight, 0.4);
+    this.messageBox.fillRect(boxX + 3, boxY + 3, boxWidth - 6, 2);
+    this.messageBox.fillRect(boxX + 3, boxY + 3, 2, boxHeight - 6);
+
+    // 3D 효과 - 내부 어두운 테두리
+    this.messageBox.fillStyle(PixelColors.bgDark, 0.6);
+    this.messageBox.fillRect(boxX + 3, boxY + boxHeight - 5, boxWidth - 6, 2);
+    this.messageBox.fillRect(boxX + boxWidth - 5, boxY + 3, 2, boxHeight - 6);
+
+    // 외부 테두리
+    this.messageBox.lineStyle(2, PixelColors.frameMedium, 1);
+    this.messageBox.strokeRect(boxX, boxY, boxWidth, boxHeight);
+
+    // 골드 장식 테두리
+    this.messageBox.lineStyle(1, PixelColors.accentGold, 0.5);
+    this.messageBox.strokeRect(boxX + 5, boxY + 5, boxWidth - 10, boxHeight - 10);
     this.add(this.messageBox);
 
-    // 메시지 텍스트
+    // 메시지 텍스트 (도트 스타일)
     this.messageText = this.scene.add.text(boxX + 15, boxY + 15, '', {
-      fontSize: '13px',
-      color: '#000000',
-      fontFamily: 'monospace',
+      ...createPixelTextStyle('medium', PixelColorStrings.textWhite),
       wordWrap: { width: boxWidth - 30 },
-      lineSpacing: 4,
+      lineSpacing: 6,
     });
     this.add(this.messageText);
 
@@ -238,7 +267,7 @@ export class BattleUI extends Phaser.GameObjects.Container {
   }
 
   /**
-   * 메뉴 버튼 생성 (오른쪽 하단) - 포켓몬 스타일 2x2
+   * 메뉴 버튼 생성 (오른쪽 하단) - 도트 스타일 2x2
    */
   private createMenu(): void {
     const startX = 250;
@@ -257,35 +286,48 @@ export class BattleUI extends Phaser.GameObjects.Container {
       // 버튼 컨테이너
       const buttonContainer = this.scene.add.container(x, y);
 
-      // 버튼 배경 (둥근 모서리, 색상)
+      // 버튼 배경 (도트 스타일 - 직각 모서리)
       const bg = this.scene.add.graphics();
-      const bgColor = item.enabled ? item.color : 0x808080;
+      const bgColor = item.enabled ? item.color : PixelColors.btnDisabled;
+
+      // 메인 배경
       bg.fillStyle(bgColor, 1);
-      bg.fillRoundedRect(0, 0, buttonWidth, buttonHeight, 16);
-      // 하이라이트 (위쪽 밝게)
+      bg.fillRect(0, 0, buttonWidth, buttonHeight);
+
+      // 3D 효과 - 상단/왼쪽 밝게
       bg.fillStyle(0xffffff, 0.3);
-      bg.fillRoundedRect(4, 2, buttonWidth - 8, buttonHeight / 2 - 2, { tl: 14, tr: 14, bl: 0, br: 0 });
+      bg.fillRect(0, 0, buttonWidth, 2);
+      bg.fillRect(0, 0, 2, buttonHeight);
+
+      // 3D 효과 - 하단/오른쪽 어둡게
+      bg.fillStyle(0x000000, 0.3);
+      bg.fillRect(0, buttonHeight - 2, buttonWidth, 2);
+      bg.fillRect(buttonWidth - 2, 0, 2, buttonHeight);
+
       // 테두리
-      bg.lineStyle(2, 0x404040, 1);
-      bg.strokeRoundedRect(0, 0, buttonWidth, buttonHeight, 16);
+      bg.lineStyle(1, PixelColors.frameDark, 1);
+      bg.strokeRect(0, 0, buttonWidth, buttonHeight);
       buttonContainer.add(bg);
 
-      // 버튼 텍스트
+      // 버튼 텍스트 (도트 스타일)
+      const textColor = item.enabled ? PixelColorStrings.textWhite : PixelColorStrings.textDark;
       const text = this.scene.add.text(buttonWidth / 2, buttonHeight / 2, item.label, {
-        fontSize: '13px',
-        color: item.enabled ? '#ffffff' : '#a0a0a0',
-        fontFamily: 'monospace',
+        ...createPixelTextStyle('medium', textColor),
         fontStyle: 'bold',
       });
       text.setOrigin(0.5, 0.5);
-      // 텍스트 그림자 효과
-      text.setShadow(1, 1, '#000000', 0);
       buttonContainer.add(text);
 
-      // 선택 표시자 (테두리로 표현)
+      // 선택 표시자 (도트 스타일 - 직각 테두리)
       const selector = this.scene.add.graphics();
-      selector.lineStyle(3, 0xffff00, 1);
-      selector.strokeRoundedRect(-2, -2, buttonWidth + 4, buttonHeight + 4, 18);
+      selector.lineStyle(2, PixelColors.accentGold, 1);
+      selector.strokeRect(-2, -2, buttonWidth + 4, buttonHeight + 4);
+      // 모서리 장식
+      selector.fillStyle(PixelColors.accentGold, 1);
+      selector.fillRect(-4, -4, 4, 4);
+      selector.fillRect(buttonWidth, -4, 4, 4);
+      selector.fillRect(-4, buttonHeight, 4, 4);
+      selector.fillRect(buttonWidth, buttonHeight, 4, 4);
       selector.setVisible(false);
       buttonContainer.add(selector);
 
@@ -336,6 +378,7 @@ export class BattleUI extends Phaser.GameObjects.Container {
    */
   public updatePlayerMp(current: number, max: number): void {
     this.playerMpBar.setValue(current, max);
+    this.playerMpText.setText(`${current}/${max}`);
   }
 
   /**
