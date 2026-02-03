@@ -75,6 +75,7 @@
 - [x] NPC 대화 종료 시 HP/MP 회복
 - [x] BattleScene HP/MP 수치 표시 수정
 - [x] GAPEVI 워크플로우에 문서화 필수 단계 추가
+- [x] 메뉴 키보드 네비게이션 (화살표/WASD/Enter/Space/Z)
 
 ### v0.1.0 (2026-02-03)
 - [x] 프로젝트 초기 설정

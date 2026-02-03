@@ -18,6 +18,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [0.1.1] - 2026-02-03
 
 ### Added
+- **Menu Keyboard Navigation**
+  - 화살표 키 (↑/↓) 및 W/S 키로 메뉴 선택
+  - Enter/Space/Z 키로 선택 확인
+  - 시각적 선택 표시자 (▶)
+  - 저장 데이터 존재 시 CONTINUE 기본 선택
+
 - **Save System**
   - LocalStorage 기반 저장/로드 시스템 (`SaveSystem.ts`)
   - 자동 저장 (플레이어 이동 시)
