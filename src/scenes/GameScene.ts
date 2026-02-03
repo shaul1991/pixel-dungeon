@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { DEBUG } from '../config';
 import { Player } from '../entities/Player';
 import type { Direction } from '../entities/Player';
 import { NPC } from '../entities/NPC';
@@ -96,7 +97,9 @@ export class GameScene extends Phaser.Scene {
     this.dialogBox = new DialogBox(this);
 
     // 디버그 정보 표시
-    this.showDebugInfo();
+    if (DEBUG) {
+      this.showDebugInfo();
+    }
   }
 
   private createTilemap(): void {
@@ -425,7 +428,9 @@ export class GameScene extends Phaser.Scene {
         this.advanceDialog();
       }
       // 디버그 정보 업데이트
-      this.updateDebugInfo();
+      if (DEBUG) {
+        this.updateDebugInfo();
+      }
       return;
     }
 
@@ -458,6 +463,8 @@ export class GameScene extends Phaser.Scene {
     }
 
     // 디버그 정보 업데이트
-    this.updateDebugInfo();
+    if (DEBUG) {
+      this.updateDebugInfo();
+    }
   }
 }

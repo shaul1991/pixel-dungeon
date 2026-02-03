@@ -1,6 +1,9 @@
 import Phaser from 'phaser';
 import { BootScene, PreloadScene, MenuScene, GameScene, BattleScene } from './scenes';
 
+// 디버그 모드 설정
+export const DEBUG = false;
+
 export const GameConfig: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   width: 480,
