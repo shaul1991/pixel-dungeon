@@ -16,7 +16,7 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'html', 'json'],
       reportsDirectory: './coverage',
-      include: ['src/systems/**/*.ts'],
+      include: ['src/systems/**/*.ts', 'src/types/**/*.ts'],
       exclude: [
         'src/**/*.test.ts',
         'src/scenes/**',
@@ -24,6 +24,8 @@ export default defineConfig({
         'src/entities/**',
         'src/main.ts',
         'src/config.ts',
+        'src/systems/InputController.ts', // Phaser-dependent, manual testing only
+        'src/systems/index.ts', // Re-exports only
       ],
       thresholds: {
         lines: 80,

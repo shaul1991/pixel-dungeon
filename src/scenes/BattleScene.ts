@@ -17,6 +17,9 @@ export interface BattleSceneData {
   monster: MonsterConfig;
   monsterTileX: number;
   monsterTileY: number;
+  // 플레이어 위치 (전투 후 복원용)
+  playerTileX: number;
+  playerTileY: number;
 }
 
 export type BattleResult = 'win' | 'lose' | 'escape';
@@ -26,6 +29,8 @@ export class BattleScene extends Phaser.Scene {
   private monsterData!: MonsterConfig;
   private monsterTileX!: number;
   private monsterTileY!: number;
+  private playerTileX!: number;
+  private playerTileY!: number;
 
   private currentTurn: 'player' | 'monster' = 'player';
   private battleUI!: BattleUI;
@@ -48,6 +53,8 @@ export class BattleScene extends Phaser.Scene {
     this.monsterData = { ...data.monster };
     this.monsterTileX = data.monsterTileX;
     this.monsterTileY = data.monsterTileY;
+    this.playerTileX = data.playerTileX;
+    this.playerTileY = data.playerTileY;
     this.currentTurn = 'player';
     this.isProcessing = false;
   }
@@ -330,6 +337,9 @@ export class BattleScene extends Phaser.Scene {
       monsterTileX: this.monsterTileX,
       monsterTileY: this.monsterTileY,
       rewards: result === 'win' ? BattleSystem.calculateRewards(this.monsterData) : null,
+      // 플레이어 위치 복원용
+      playerTileX: this.playerTileX,
+      playerTileY: this.playerTileY,
     };
 
     if (result === 'lose') {

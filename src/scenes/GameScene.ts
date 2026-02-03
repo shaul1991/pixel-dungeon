@@ -17,6 +17,9 @@ interface BattleResultData {
   monsterTileX: number;
   monsterTileY: number;
   rewards: { exp: number; gold: number } | null;
+  // 플레이어 위치 복원용
+  playerTileX: number;
+  playerTileY: number;
 }
 
 export class GameScene extends Phaser.Scene {
@@ -45,7 +48,7 @@ export class GameScene extends Phaser.Scene {
   // 몬스터 관련
   private monsters: Monster[] = [];
   private monstersData!: Record<string, MonsterConfig>;
-  private defeatedMonsters: Set<string> = new Set(); // 처치된 몬스터 위치 저장
+  // defeatedMonsters는 Registry에 저장하여 씬 재시작 시에도 유지
 
   // 대화창
   private dialogBox!: DialogBox;
@@ -58,27 +61,53 @@ export class GameScene extends Phaser.Scene {
     super({ key: 'GameScene' });
   }
 
+  // 전투 후 복원할 플레이어 위치
+  private savedPlayerPosition: { x: number; y: number } | null = null;
+
   init(data?: BattleResultData): void {
+    // Registry에서 defeatedMonsters 가져오기 (없으면 새로 생성)
+    let defeatedMonsters = this.registry.get('defeatedMonsters') as Set<string> | undefined;
+    if (!defeatedMonsters) {
+      defeatedMonsters = new Set<string>();
+      this.registry.set('defeatedMonsters', defeatedMonsters);
+    }
+
     // 전투 결과 처리
     if (data && data.result) {
       // 플레이어 HP 업데이트
       this.playerStats.hp = data.playerHp;
 
+      // 플레이어 위치 복원 (전투 전 위치로)
+      this.savedPlayerPosition = {
+        x: data.playerTileX,
+        y: data.playerTileY,
+      };
+
       if (data.result === 'win') {
-        // 처치된 몬스터 기록
+        // 처치된 몬스터 기록 (Registry에 저장)
         const monsterKey = `${data.monsterTileX},${data.monsterTileY}`;
-        this.defeatedMonsters.add(monsterKey);
+        defeatedMonsters.add(monsterKey);
+        this.registry.set('defeatedMonsters', defeatedMonsters);
 
         // 보상 처리 (추후 확장)
         if (data.rewards) {
           console.log(`GameScene: Earned ${data.rewards.exp} EXP, ${data.rewards.gold} Gold`);
         }
+
+        console.log(`GameScene: Monster at (${data.monsterTileX}, ${data.monsterTileY}) defeated`);
       }
+    } else {
+      // 새 게임 시작 시 초기화
+      this.savedPlayerPosition = null;
     }
   }
 
   create(): void {
     console.log('GameScene: Starting game...');
+
+    // 배열 초기화 (씬 재시작 시 이전 객체 제거)
+    this.monsters = [];
+    this.npcs = [];
 
     // 대화 데이터 로드
     this.dialogs = this.cache.json.get('dialogs');
@@ -128,23 +157,32 @@ export class GameScene extends Phaser.Scene {
   }
 
   private createPlayer(): void {
-    // 맵 중앙에서 플레이어 스폰
-    const centerTileX = Math.floor(this.map.width / 2);
-    const centerTileY = Math.floor(this.map.height / 2);
+    let spawnTileX: number;
+    let spawnTileY: number;
 
-    // 빈 공간 찾기 (벽이 아닌 위치)
-    let spawnTileX = centerTileX;
-    let spawnTileY = centerTileY;
+    // 전투 후 복귀 시 저장된 위치 사용
+    if (this.savedPlayerPosition) {
+      spawnTileX = this.savedPlayerPosition.x;
+      spawnTileY = this.savedPlayerPosition.y;
+      console.log(`GameScene: Restoring player to saved position (${spawnTileX}, ${spawnTileY})`);
+    } else {
+      // 새 게임: 맵 중앙에서 플레이어 스폰
+      const centerTileX = Math.floor(this.map.width / 2);
+      const centerTileY = Math.floor(this.map.height / 2);
 
-    // 스폰 위치가 벽이면 주변에서 빈 공간 찾기
-    if (this.wallsLayer) {
-      const tile = this.wallsLayer.getTileAt(centerTileX, centerTileY);
-      if (tile && tile.index !== -1) {
-        // 스파이럴 검색으로 빈 공간 찾기
-        const found = this.findEmptyTile(centerTileX, centerTileY);
-        if (found) {
-          spawnTileX = found.x;
-          spawnTileY = found.y;
+      spawnTileX = centerTileX;
+      spawnTileY = centerTileY;
+
+      // 스폰 위치가 벽이면 주변에서 빈 공간 찾기
+      if (this.wallsLayer) {
+        const tile = this.wallsLayer.getTileAt(centerTileX, centerTileY);
+        if (tile && tile.index !== -1) {
+          // 스파이럴 검색으로 빈 공간 찾기
+          const found = this.findEmptyTile(centerTileX, centerTileY);
+          if (found) {
+            spawnTileX = found.x;
+            spawnTileY = found.y;
+          }
         }
       }
     }
@@ -209,6 +247,9 @@ export class GameScene extends Phaser.Scene {
    * 몬스터 생성
    */
   private createMonsters(): void {
+    // Registry에서 defeatedMonsters 가져오기
+    const defeatedMonsters = this.registry.get('defeatedMonsters') as Set<string> || new Set<string>();
+
     // 슬라임 몬스터를 맵에 배치 (빈 공간에)
     const monsterPositions = [
       { x: 2, y: 2 },
@@ -225,9 +266,10 @@ export class GameScene extends Phaser.Scene {
     }
 
     monsterPositions.forEach((pos) => {
-      // 이미 처치된 몬스터는 생성하지 않음
+      // 이미 처치된 몬스터는 생성하지 않음 (Registry에서 확인)
       const monsterKey = `${pos.x},${pos.y}`;
-      if (this.defeatedMonsters.has(monsterKey)) {
+      if (defeatedMonsters.has(monsterKey)) {
+        console.log(`GameScene: Skipping defeated monster at (${pos.x}, ${pos.y})`);
         return;
       }
 
@@ -244,7 +286,7 @@ export class GameScene extends Phaser.Scene {
       console.log(`GameScene: Monster '${slimeConfig.name}' created at tile (${pos.x}, ${pos.y})`);
     });
 
-    console.log(`GameScene: ${this.monsters.length} monsters created`);
+    console.log(`GameScene: ${this.monsters.length} monsters created (${defeatedMonsters.size} defeated)`);
   }
 
   /**
@@ -265,15 +307,19 @@ export class GameScene extends Phaser.Scene {
    */
   private startBattle(monster: Monster): void {
     const monsterPos = monster.getTilePosition();
+    const playerPos = this.player.getTilePosition();
 
     const battleData: BattleSceneData = {
       player: { ...this.playerStats },
       monster: monster.getConfig(),
       monsterTileX: monsterPos.x,
       monsterTileY: monsterPos.y,
+      // 플레이어 위치 저장 (전투 후 복원용)
+      playerTileX: playerPos.x,
+      playerTileY: playerPos.y,
     };
 
-    console.log(`GameScene: Starting battle with ${monster.getStats().name}`);
+    console.log(`GameScene: Starting battle with ${monster.getStats().name} at player pos (${playerPos.x}, ${playerPos.y})`);
     this.scene.start('BattleScene', battleData);
   }
 

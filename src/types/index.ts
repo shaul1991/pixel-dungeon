@@ -165,3 +165,61 @@ export type GameEvent =
   | { type: 'OPEN_DOOR'; position: TilePosition }
   | { type: 'DESCEND' }
   | { type: 'ASCEND' };
+
+// ============ Type Guards ============
+
+/**
+ * Check if entity is a Player
+ */
+export function isPlayer(entity: Entity): entity is Player {
+  return entity.type === 'player';
+}
+
+/**
+ * Check if entity is a Monster
+ */
+export function isMonster(entity: Entity): entity is Monster {
+  return entity.type === 'monster';
+}
+
+/**
+ * Check if entity is an NPC (has type but not player/monster)
+ */
+export function isNPC(entity: Entity): boolean {
+  return entity.type === 'npc';
+}
+
+/**
+ * Check if entity is an Item
+ */
+export function isItem(entity: Entity): boolean {
+  return entity.type === 'item';
+}
+
+/**
+ * Check if item is consumable
+ */
+export function isConsumable(item: Item): boolean {
+  return item.category === 'consumable';
+}
+
+/**
+ * Check if item is equipment (weapon or armor)
+ */
+export function isEquipment(item: Item): boolean {
+  return item.category === 'weapon' || item.category === 'armor';
+}
+
+/**
+ * Check if tile is walkable
+ */
+export function isWalkable(tile: Tile): boolean {
+  return tile.walkable && tile.type !== 'wall';
+}
+
+/**
+ * Check if position is valid within dungeon bounds
+ */
+export function isValidPosition(pos: TilePosition, width: number, height: number): boolean {
+  return pos.col >= 0 && pos.col < width && pos.row >= 0 && pos.row < height;
+}
