@@ -17,44 +17,88 @@
 .claude/
 ├── CLAUDE.md           # 프로젝트 가이드라인
 ├── settings.json       # 권한 및 훅 설정
+│
 ├── agents/             # 에이전트 정의
 │   ├── entity.md       # 엔티티 개발 (Player, Monster, NPC)
 │   ├── scene.md        # Phaser 씬 개발
 │   ├── system.md       # 게임 시스템 (로직)
 │   ├── ui.md           # UI 컴포넌트
-│   └── tester.md       # 테스트
+│   ├── tester.md       # 테스트
+│   ├── qa.md           # QA/품질 검증
+│   └── meta.md         # Claude Code 설정 관리
+│
 ├── commands/           # 슬래시 명령어
 │   ├── new-feature.md  # 새 기능 개발
 │   ├── bugfix.md       # 버그 수정
 │   ├── build.md        # 빌드
 │   ├── validate.md     # 검증
-│   └── dev.md          # 개발 서버
+│   ├── dev.md          # 개발 서버
+│   ├── qa.md           # QA 사이클
+│   ├── qa-auto.md      # 자동화 테스트
+│   ├── qa-manual.md    # 수동 체크리스트
+│   ├── qa-scenario.md  # 시나리오 테스트
+│   └── make-agent.md   # 구성 요소 생성
+│
 ├── hooks/              # 자동화 훅
 │   ├── post-edit.sh    # 편집 후 타입 체크
 │   └── post-git-change.sh
+│
+├── templates/          # 구성 요소 템플릿
+│   ├── agent.md        # 에이전트 템플릿
+│   ├── command.md      # 명령어 템플릿
+│   ├── knowledge.md    # 지식 베이스 템플릿
+│   ├── rule.md         # 규칙 템플릿
+│   └── hook.sh         # 훅 템플릿
+│
 ├── knowledge/          # 지식 베이스
 │   ├── architecture.md # 게임 아키텍처
 │   ├── conventions.md  # 코딩 컨벤션
 │   ├── phaser-patterns.md # Phaser 패턴
-│   └── git-workflow.md # Git 워크플로우
-└── rules/              # 코딩 규칙
-    ├── typescript.md   # TypeScript 규칙
-    ├── phaser.md       # Phaser 규칙
-    ├── game-architecture.md # 아키텍처 규칙
-    └── testing.md      # 테스트 규칙
+│   ├── git-workflow.md # Git 워크플로우
+│   ├── qa-patterns.md  # QA 패턴
+│   └── meta-patterns.md # Meta 패턴
+│
+├── rules/              # 코딩 규칙
+│   ├── typescript.md   # TypeScript 규칙
+│   ├── phaser.md       # Phaser 규칙
+│   ├── game-architecture.md # 아키텍처 규칙
+│   └── testing.md      # 테스트 규칙
+│
+└── qa/                 # QA 시나리오
+    ├── scenarios/      # 테스트 시나리오
+    ├── templates/      # 리포트 템플릿
+    └── reports/        # 테스트 결과
 ```
 
 ---
 
 ## 주요 명령어
 
+### 개발
 | 명령어 | 설명 |
 |--------|------|
 | `/new-feature` | 새 기능 개발 (GAPEVI 사이클) |
 | `/bugfix` | 버그 수정 |
+
+### 빌드/실행
+| 명령어 | 설명 |
+|--------|------|
 | `/build` | 프로젝트 빌드 (`npm run build`) |
 | `/validate` | 타입 체크 및 빌드 검증 |
 | `/dev` | 개발 서버 실행 (`npm run dev`) |
+
+### QA
+| 명령어 | 설명 |
+|--------|------|
+| `/qa` | 전체 QA 사이클 |
+| `/qa-auto` | 자동화 테스트 (단위 테스트 + 타입 체크 + 빌드) |
+| `/qa-manual` | 수동 체크리스트 표시 |
+| `/qa-scenario` | 특정 시나리오 테스트 |
+
+### 메타
+| 명령어 | 설명 |
+|--------|------|
+| `/make-agent` | 에이전트/명령어/지식/규칙/훅 생성 |
 
 ---
 

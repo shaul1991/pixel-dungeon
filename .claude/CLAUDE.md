@@ -144,6 +144,15 @@ pixel-dungeon/
 @./knowledge/architecture.md
 @./knowledge/phaser-patterns.md
 @./knowledge/git-workflow.md
+@./knowledge/qa-patterns.md
+@./knowledge/meta-patterns.md
+
+## 에이전트 정의
+@./agents/meta.md
+
+## QA 문서
+@./qa/README.md
+@./agents/qa.md
 
 ## 프로젝트 추적
 @../docs/ROADMAP.md
@@ -216,7 +225,9 @@ pixel-dungeon/
 | System, 시스템, 전투, 입력 | **System** |
 | UI, HUD, 메뉴, 대화창, 인벤토리 | **UI** |
 | 에셋, 스프라이트, 타일셋, 이미지 | **Asset** |
-| 테스트, 검증, QA | **Tester** |
+| 테스트, 단위 테스트, 코드 검증 | **Tester** |
+| QA, 품질 검증, 시나리오, 체크리스트 | **QA** |
+| Agent, Command, Hook, Knowledge, Rule, 설정 | **Meta** |
 
 ### 3. 우선순위 (Prioritize)
 `[GAPEVI:PRIORITIZE] 시작` / `[GAPEVI:PRIORITIZE] 완료`
@@ -253,11 +264,19 @@ pixel-dungeon/
 ┌─────────────────────────────────────────────────────────┐
 │                     Quality Gate                         │
 ├─────────────────────────────────────────────────────────┤
-│  1. 타입 체크         tsc --noEmit                       │
-│  2. 린트 (ESLint)     npx eslint src/ (설정 시)          │
-│  3. 빌드 (Vite)       npm run build                      │
-│  4. 게임 실행 테스트   npm run dev → 브라우저 확인        │
+│  1. 단위 테스트       npm run test                       │
+│  2. 타입 체크         tsc --noEmit                       │
+│  3. 린트 (ESLint)     npx eslint src/ (설정 시)          │
+│  4. 빌드 (Vite)       npm run build                      │
+│  5. 스모크 테스트     .claude/qa/scenarios/smoke.md      │
+│  6. 영역별 테스트     해당 시나리오 (선택)                │
 └─────────────────────────────────────────────────────────┘
+```
+
+**자동화 테스트 (Makefile)**:
+```bash
+make qa-auto    # 1-4 자동 실행
+make qa         # 자동화 + 수동 테스트 안내
 ```
 
 ### 6. 반복 (Iterate)
@@ -310,6 +329,15 @@ pixel-dungeon/
 - `/dev` - 개발 서버 실행
 - `/validate` - 타입 체크 및 빌드 검증
 
+### QA (품질 검증)
+- `/qa` - 전체 QA 사이클 (자동화 + 수동 테스트 안내)
+- `/qa-auto` - 자동화 테스트만 (단위 테스트 + 타입 체크 + 빌드)
+- `/qa-manual` - 수동 체크리스트 표시
+- `/qa-scenario [name]` - 특정 시나리오 테스트
+
+### 메타 (Claude Code 설정)
+- `/make-agent` - 에이전트/명령어/지식/규칙/훅 생성
+
 ### 에셋
 - `/generate-sprite` - 스프라이트 생성 스크립트 실행
 - `/generate-tileset` - 타일셋 생성
@@ -320,6 +348,8 @@ pixel-dungeon/
 
 | 날짜 | 변경 | 담당자 |
 |------|------|--------|
+| 2026-02-03 | Meta 시스템 추가 (/make-agent 명령어, Meta 에이전트, 템플릿) | @claude |
+| 2026-02-03 | QA 시스템 추가 (에이전트, 명령어, 시나리오, Quality Gate 업데이트) | @claude |
 | 2026-02-03 | IPE/GAPEVI 디버그 출력 추가 (시작/종료 지점) | @claude |
 | 2026-02-03 | 트리거 판단 제거, 모든 요청에 YES/NO 확인 방식으로 변경 | @claude |
 | 2026-02-03 | 프로젝트 추적 문서 참조 추가 (ROADMAP, TODO, CHANGELOG) | @claude |
