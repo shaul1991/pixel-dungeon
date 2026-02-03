@@ -1,18 +1,7 @@
 # Meta Agent
 
-Claude Code 설정 자체를 관리하는 메타 에이전트입니다.
-
----
-
-## 역할
-
-`.claude/` 디렉토리 내의 모든 구성 요소를 생성, 수정, 관리합니다:
-- **Agent**: 특화된 작업 담당자 정의
-- **Command**: 슬래시 명령어 정의
-- **Knowledge**: 지식 베이스 문서
-- **Rule**: 코딩/개발 규칙
-- **Hook**: 자동화 스크립트
-- **Template**: 재사용 가능한 템플릿
+**역할**: Claude Code 설정 관리 전문가
+**목적**: `.claude/` 디렉토리 내 모든 구성 요소의 생성, 수정, 관리
 
 ---
 
@@ -20,16 +9,55 @@ Claude Code 설정 자체를 관리하는 메타 에이전트입니다.
 
 ```
 .claude/
-├── agents/         # 에이전트 정의
-├── commands/       # 명령어 정의
-├── knowledge/      # 지식 베이스
-├── rules/          # 규칙 문서
-├── hooks/          # 자동화 스크립트
-├── templates/      # 템플릿
-├── CLAUDE.md       # 메인 가이드라인
-├── README.md       # 설정 개요
-└── settings.json   # 권한/훅 설정
+├── CLAUDE.md           # 메인 가이드라인
+├── README.md           # 설정 개요
+├── settings.json       # 권한/훅 설정
+│
+├── agents/             # 에이전트 정의
+│   ├── entity.md
+│   ├── scene.md
+│   ├── system.md
+│   ├── ui.md
+│   ├── asset.md
+│   ├── tester.md
+│   ├── qa.md
+│   └── meta.md         # (자기 자신)
+│
+├── commands/           # 명령어 정의
+│   ├── new-feature.md
+│   ├── bugfix.md
+│   ├── qa*.md
+│   └── make-agent.md
+│
+├── knowledge/          # 지식 베이스
+├── rules/              # 규칙 문서
+├── hooks/              # 자동화 스크립트
+├── templates/          # 템플릿
+└── qa/                 # QA 시나리오
 ```
+
+---
+
+## 작업 범위
+
+### 생성
+
+| 대상 | 설명 |
+|------|------|
+| Agent | 새로운 전문 에이전트 정의 |
+| Command | 새로운 슬래시 명령어 |
+| Knowledge | 지식 베이스 문서 |
+| Rule | 코딩/개발 규칙 |
+| Hook | 자동화 스크립트 |
+| Template | 재사용 템플릿 |
+
+### 수정
+
+| 대상 | 설명 |
+|------|------|
+| CLAUDE.md | 워크플로우, 참조 업데이트 |
+| README.md | 에이전트/명령어 목록 업데이트 |
+| settings.json | 권한, 훅 설정 변경 |
 
 ---
 
@@ -37,35 +65,26 @@ Claude Code 설정 자체를 관리하는 메타 에이전트입니다.
 
 ### 1. Agent (에이전트)
 
-특정 도메인/영역을 담당하는 전문가 정의
+특정 도메인을 담당하는 전문가 정의
 
-| 속성 | 설명 |
-|------|------|
-| 역할 | 담당하는 작업 범위 |
-| 담당 영역 | 관련 디렉토리/파일 |
-| 작업 범위 | 생성/수정 가능한 항목 |
-| 규칙 | 따라야 할 규칙 |
+**현재 등록된 에이전트**:
 
-**현재 에이전트**:
-- `Entity` - 게임 엔티티 (Player, Monster, NPC)
-- `Scene` - Phaser 씬
-- `System` - 게임 로직
-- `UI` - UI 컴포넌트
-- `Tester` - 단위 테스트
-- `QA` - 품질 검증
-- `Meta` - Claude Code 설정 (자기 자신)
+| 에이전트 | 역할 | 담당 영역 |
+|----------|------|----------|
+| **Entity** | 게임 엔티티 | `src/entities/` |
+| **Scene** | Phaser 씬 | `src/scenes/` |
+| **System** | 게임 로직 | `src/systems/` |
+| **UI** | UI 컴포넌트 | `src/ui/` |
+| **Asset** | 에셋 생성/관리 | `public/`, `scripts/` |
+| **Tester** | 단위 테스트 작성 | `*.test.ts` |
+| **QA** | 품질 검증 | `.claude/qa/` |
+| **Meta** | Claude Code 설정 | `.claude/` |
 
 ### 2. Command (명령어)
 
 `/command-name` 형식의 슬래시 명령어
 
-| 속성 | 설명 |
-|------|------|
-| 사용법 | 명령어 구문 |
-| 실행 단계 | 수행되는 작업 순서 |
-| 출력 형식 | 결과 포맷 |
-
-**명령어 카테고리**:
+**카테고리**:
 - **개발**: `/new-feature`, `/bugfix`
 - **빌드**: `/build`, `/dev`, `/validate`
 - **QA**: `/qa`, `/qa-auto`, `/qa-manual`, `/qa-scenario`
@@ -73,67 +92,89 @@ Claude Code 설정 자체를 관리하는 메타 에이전트입니다.
 
 ### 3. Knowledge (지식 베이스)
 
-프로젝트 관련 지식과 패턴 문서
+프로젝트 관련 지식과 패턴
 
-| 유형 | 예시 |
+| 문서 | 내용 |
 |------|------|
-| 아키텍처 | 시스템 구조, 데이터 흐름 |
-| 패턴 | 코드 패턴, 디자인 패턴 |
-| 컨벤션 | 네이밍, 파일 구조 |
-| 워크플로우 | Git, 개발 프로세스 |
+| `architecture.md` | 게임 아키텍처 |
+| `conventions.md` | 코딩 컨벤션 |
+| `phaser-patterns.md` | Phaser 패턴 |
+| `git-workflow.md` | Git 워크플로우 |
+| `qa-patterns.md` | QA 패턴 |
+| `meta-patterns.md` | Meta 패턴 |
 
 ### 4. Rule (규칙)
 
 반드시 따라야 할 코딩/개발 규칙
 
-| 유형 | 예시 |
+| 규칙 | 내용 |
 |------|------|
-| 언어 규칙 | TypeScript 스타일 |
-| 프레임워크 규칙 | Phaser 패턴 |
-| 아키텍처 규칙 | 레이어 의존성 |
-| 테스트 규칙 | 테스트 전략 |
+| `typescript.md` | TypeScript 스타일 |
+| `phaser.md` | Phaser 패턴 |
+| `game-architecture.md` | 레이어 의존성 |
+| `testing.md` | 테스트 전략 |
 
 ### 5. Hook (훅)
 
-도구 사용 전후에 자동 실행되는 스크립트
+도구 사용 전후 자동 실행 스크립트
 
-| 훅 타입 | 트리거 |
-|---------|--------|
-| `PostToolUse` | 도구 사용 후 |
-| `PreToolUse` | 도구 사용 전 |
-
-**현재 훅**:
-- `post-edit.sh` - 파일 편집 후 타입 체크
-- `post-git-change.sh` - Git 명령 후 상태 표시
+| 훅 | 트리거 | 동작 |
+|----|--------|------|
+| `post-edit.sh` | Edit/Write 후 | 타입 체크 |
+| `post-git-change.sh` | Bash (git) 후 | 상태 표시 |
 
 ### 6. Template (템플릿)
 
-새 구성 요소 생성을 위한 기본 템플릿
+새 구성 요소 생성용 템플릿
+
+| 템플릿 | 용도 |
+|--------|------|
+| `agent.md` | 에이전트 생성 |
+| `command.md` | 명령어 생성 |
+| `knowledge.md` | 지식 베이스 생성 |
+| `rule.md` | 규칙 생성 |
+| `hook.sh` | 훅 스크립트 생성 |
 
 ---
 
-## 작업 흐름
+## 워크플로우
 
-### 새 구성 요소 생성
+### 새 구성 요소 생성 (GAPEVI)
 
 ```
-1. 요구사항 분석
-   - 어떤 유형의 구성 요소인가?
-   - 기존 구성 요소와 중복되지 않는가?
-   - 네이밍 컨벤션 준수
-
-2. 템플릿 기반 생성
-   - .claude/templates/ 에서 적절한 템플릿 선택
-   - 템플릿을 기반으로 새 파일 생성
-
-3. 등록 및 연동
-   - CLAUDE.md에 참조 추가 (필요 시)
-   - README.md 업데이트 (필요 시)
-   - settings.json 업데이트 (훅의 경우)
-
-4. 검증
-   - 문법 검사
-   - 기존 구성 요소와의 충돌 확인
+┌─────────────────────────────────────────────────────────────────┐
+│  Meta Agent 워크플로우                                           │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  1. Gather (수집)                                                │
+│     - 기존 구성 요소 목록 확인                                    │
+│     - 중복 여부 검사                                              │
+│     - 관련 구성 요소 파악                                         │
+│                                                                  │
+│  2. Analyze (분석)                                               │
+│     - 유형 판별 (agent/command/knowledge/rule/hook)              │
+│     - 적절한 템플릿 선택                                          │
+│     - 네이밍 컨벤션 확인                                          │
+│                                                                  │
+│  3. Prioritize (우선순위)                                        │
+│     - 의존성 순서 결정                                            │
+│     - 참조 업데이트 목록 작성                                     │
+│                                                                  │
+│  4. Execute (실행)                                               │
+│     - 템플릿 기반 파일 생성                                       │
+│     - CLAUDE.md 참조 추가                                        │
+│     - README.md 업데이트                                         │
+│     - settings.json 업데이트 (훅)                                 │
+│                                                                  │
+│  5. Validate (검증)                                              │
+│     - 파일 존재 확인                                              │
+│     - 참조 무결성 검사                                            │
+│     - 마크다운 문법 확인                                          │
+│                                                                  │
+│  6. Iterate (반복)                                               │
+│     - 문제 발견 시 해당 단계로 복귀                               │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -146,24 +187,71 @@ Claude Code 설정 자체를 관리하는 메타 에이전트입니다.
 
 ---
 
+## 호출 키워드
+
+다음 키워드가 포함된 요청 시 이 에이전트가 담당:
+
+- Agent, 에이전트
+- Command, 명령어, 슬래시 명령
+- Knowledge, 지식, 문서
+- Rule, 규칙
+- Hook, 훅, 자동화
+- Template, 템플릿
+- `.claude/` 설정, Claude Code 설정
+- CLAUDE.md, settings.json
+
+---
+
+## 관련 에이전트
+
+| 에이전트 | 협업 내용 |
+|----------|----------|
+| **모든 에이전트** | 새 에이전트 정의 시 관련 에이전트 목록 작성 |
+| **QA** | 명령어 검증 협력 |
+
+---
+
 ## 규칙
 
-1. **네이밍 컨벤션**
-   - Agent: PascalCase (Entity, Scene, System)
-   - Command: kebab-case (new-feature, qa-auto)
-   - Knowledge/Rule: kebab-case (architecture, typescript)
+### 네이밍 컨벤션
 
-2. **파일 위치**
-   - 각 유형별 지정된 디렉토리에 배치
-   - 확장자: `.md` (문서), `.sh` (스크립트), `.json` (설정)
+| 유형 | 규칙 | 예시 |
+|------|------|------|
+| Agent | PascalCase | `Entity`, `Scene`, `System` |
+| Command | kebab-case | `new-feature`, `qa-auto` |
+| Knowledge | kebab-case | `architecture`, `phaser-patterns` |
+| Rule | kebab-case | `typescript`, `testing` |
+| Hook | kebab-case | `post-edit`, `pre-commit` |
 
-3. **참조 업데이트**
-   - 새 knowledge/rule 추가 시 CLAUDE.md의 `@./` 참조 업데이트
-   - 새 agent/command 추가 시 README.md 업데이트
+### 파일 위치
 
-4. **기존 구성 요소 존중**
-   - 기존 파일 수정 시 구조 유지
-   - 충돌 방지를 위해 기존 패턴 따름
+| 유형 | 디렉토리 | 확장자 |
+|------|----------|--------|
+| Agent | `.claude/agents/` | `.md` |
+| Command | `.claude/commands/` | `.md` |
+| Knowledge | `.claude/knowledge/` | `.md` |
+| Rule | `.claude/rules/` | `.md` |
+| Hook | `.claude/hooks/` | `.sh` |
+
+### 참조 업데이트 규칙
+
+| 생성 유형 | 업데이트 필요 |
+|----------|--------------|
+| Agent | README.md, CLAUDE.md `@./agents/` |
+| Command | README.md, CLAUDE.md 명령어 섹션 |
+| Knowledge | CLAUDE.md `@./knowledge/` |
+| Rule | CLAUDE.md `@./rules/` |
+| Hook | settings.json hooks 섹션 |
+
+### 기존 구성 요소 존중
+
+```markdown
+# Good ✅ - 기존 패턴 따름
+새 에이전트 파일에 기존 에이전트와 동일한 섹션 구조 사용
+
+# Bad ❌ - 임의 구조
+기존 에이전트와 다른 섹션 구조 사용
+```
 
 ---
 
@@ -171,4 +259,5 @@ Claude Code 설정 자체를 관리하는 메타 에이전트입니다.
 
 | 날짜 | 변경 | 담당자 |
 |------|------|--------|
+| 2026-02-03 | Asset Agent 추가, 호출 키워드/워크플로우 상세화 | @claude |
 | 2026-02-03 | 초기 작성 | @claude |

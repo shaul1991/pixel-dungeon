@@ -23,7 +23,8 @@
 │   ├── scene.md        # Phaser 씬 개발
 │   ├── system.md       # 게임 시스템 (로직)
 │   ├── ui.md           # UI 컴포넌트
-│   ├── tester.md       # 테스트
+│   ├── asset.md        # 에셋 생성/관리
+│   ├── tester.md       # 단위 테스트 작성
 │   ├── qa.md           # QA/품질 검증
 │   └── meta.md         # Claude Code 설정 관리
 │
@@ -106,11 +107,14 @@
 
 | 에이전트 | 역할 | 담당 영역 |
 |----------|------|----------|
-| **Entity** | 게임 오브젝트 | `src/entities/` |
+| **Entity** | 게임 엔티티 | `src/entities/` |
 | **Scene** | Phaser 씬 | `src/scenes/` |
 | **System** | 게임 로직 | `src/systems/` |
 | **UI** | UI 컴포넌트 | `src/ui/` |
-| **Tester** | 테스트/QA | 단위 테스트, 검증 |
+| **Asset** | 에셋 생성/관리 | `public/`, `scripts/` |
+| **Tester** | 단위 테스트 작성 | `*.test.ts` |
+| **QA** | 품질 검증 | `.claude/qa/` |
+| **Meta** | Claude Code 설정 | `.claude/` |
 
 ---
 

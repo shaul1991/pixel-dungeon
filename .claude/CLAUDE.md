@@ -74,12 +74,34 @@
 │     [IPE:EXECUTE] 시작 → GAPEVI 사이클로 전환                     │
 │                                                                  │
 │     사용자 승인 후 GAPEVI 사이클 실행                             │
+│     (IPE:Interpret 결과를 GAPEVI:Gather로 전달)                  │
 │                                                                  │
 │     [IPE:EXECUTE] 완료                                           │
 ├─────────────────────────────────────────────────────────────────┤
 │  [IPE:END] 워크플로우 완료                                        │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+### IPE → GAPEVI 전환 매핑
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  IPE와 GAPEVI의 관계                                             │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  IPE:Interpret ──────→ GAPEVI:Gather + Analyze (일부)           │
+│  (코드 분석)           (컨텍스트 수집 완료 상태로 시작)           │
+│                                                                  │
+│  IPE:Present ────────→ 사용자 확인 단계                          │
+│  (작업 제안)           (GAPEVI 진입 전 승인)                     │
+│                                                                  │
+│  IPE:Execute ────────→ GAPEVI:Prioritize → Execute → Validate   │
+│  (실행)                (Gather/Analyze 생략, 바로 우선순위 결정)  │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**핵심**: IPE를 통해 이미 분석이 완료되었으므로, GAPEVI 진입 시 Gather/Analyze를 중복 수행하지 않음
 
 ---
 
@@ -148,11 +170,17 @@ pixel-dungeon/
 @./knowledge/meta-patterns.md
 
 ## 에이전트 정의
+@./agents/entity.md
+@./agents/scene.md
+@./agents/system.md
+@./agents/ui.md
+@./agents/asset.md
+@./agents/tester.md
+@./agents/qa.md
 @./agents/meta.md
 
 ## QA 문서
 @./qa/README.md
-@./agents/qa.md
 
 ## 프로젝트 추적
 @../docs/ROADMAP.md

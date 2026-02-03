@@ -61,3 +61,33 @@ src/
 - [ ] 다중 던전 층
 
 자세한 내용은 [로드맵](docs/ROADMAP.md)을 참고하세요.
+
+## Claude Code 설정
+
+`.claude/` 디렉토리에 Claude Code 커스텀 설정이 포함되어 있습니다.
+
+### 에이전트
+
+| 에이전트 | 담당 영역 |
+|----------|----------|
+| **Entity** | 게임 엔티티 (Player, Monster, NPC) |
+| **Scene** | Phaser 씬 관리 |
+| **System** | 게임 로직 (Battle, Input) |
+| **UI** | UI 컴포넌트 (HealthBar, DialogBox) |
+| **Asset** | 스프라이트, 타일셋, 에셋 생성 |
+| **Tester** | 단위 테스트 작성 |
+| **QA** | 품질 검증 및 시나리오 테스트 |
+| **Meta** | Claude Code 설정 관리 |
+
+### 명령어
+
+| 명령어 | 설명 |
+|--------|------|
+| `/new-feature` | 새 기능 개발 |
+| `/bugfix` | 버그 수정 |
+| `/qa` | 전체 QA 사이클 |
+| `/qa-auto` | 자동화 테스트 |
+| `/validate` | 타입 체크 및 빌드 검증 |
+| `/make-agent` | 에이전트/명령어/규칙 생성 |
+
+자세한 내용은 [.claude/README.md](.claude/README.md)를 참고하세요.
