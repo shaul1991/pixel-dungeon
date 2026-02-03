@@ -7,6 +7,8 @@ import type { NPCConfig } from '../entities/NPC';
 import type { MonsterConfig } from '../entities/Monster';
 import { InputController } from '../systems/InputController';
 import { EncounterSystem } from '../systems/EncounterSystem';
+import { SaveSystem } from '../systems/SaveSystem';
+import type { SaveData } from '../systems/SaveSystem';
 import { DialogBox } from '../ui/DialogBox';
 import { StatusUI } from '../ui/StatusUI';
 import type { PlayerData, BattleSceneData } from './BattleScene';
@@ -22,6 +24,15 @@ interface BattleResultData {
   playerTileX: number;
   playerTileY: number;
 }
+
+/** Continue 모드 데이터 (저장된 게임 로드) */
+interface ContinueData {
+  isContinue: true;
+  saveData: SaveData;
+}
+
+/** GameScene 초기화 데이터 타입 */
+type GameSceneInitData = BattleResultData | ContinueData | undefined;
 
 export class GameScene extends Phaser.Scene {
   private map!: Phaser.Tilemaps.Tilemap;
@@ -72,9 +83,27 @@ export class GameScene extends Phaser.Scene {
   // 전투 후 복원할 플레이어 위치
   private savedPlayerPosition: { x: number; y: number } | null = null;
 
-  init(data?: BattleResultData): void {
+  init(data?: GameSceneInitData): void {
+    // Continue 모드 (저장된 게임 로드)
+    if (data && 'isContinue' in data && data.isContinue) {
+      console.log('GameScene: Loading saved game...');
+      const saveData = data.saveData;
+
+      // 저장된 스탯 복원
+      this.playerStats = { ...saveData.player.stats };
+
+      // 저장된 위치 복원
+      this.savedPlayerPosition = {
+        x: saveData.player.tileX,
+        y: saveData.player.tileY,
+      };
+
+      console.log(`GameScene: Restored from save (${SaveSystem.formatSaveTime(saveData.timestamp)})`);
+      return;
+    }
+
     // 전투 결과 처리
-    if (data && data.result) {
+    if (data && 'result' in data) {
       // 플레이어 HP 업데이트
       this.playerStats.hp = data.playerHp;
 
@@ -87,10 +116,21 @@ export class GameScene extends Phaser.Scene {
       if (data.result === 'win' && data.rewards) {
         console.log(`GameScene: Earned ${data.rewards.exp} EXP, ${data.rewards.gold} Gold`);
       }
-    } else {
-      // 새 게임 시작 시 초기화
-      this.savedPlayerPosition = null;
+      return;
     }
+
+    // 새 게임 시작 시 초기화
+    this.savedPlayerPosition = null;
+
+    // 새 게임: 기본 스탯으로 초기화
+    this.playerStats = {
+      hp: 100,
+      maxHp: 100,
+      mp: 30,
+      maxMp: 30,
+      attack: 15,
+      defense: 5,
+    };
   }
 
   create(): void {
@@ -139,6 +179,14 @@ export class GameScene extends Phaser.Scene {
       attack: this.playerStats.attack,
       defense: this.playerStats.defense,
     });
+  }
+
+  /**
+   * 게임 자동 저장
+   */
+  private saveGame(): void {
+    const pos = this.player.getTilePosition();
+    SaveSystem.save(pos.x, pos.y, this.playerStats);
   }
 
   private createTilemap(): void {
@@ -302,11 +350,39 @@ export class GameScene extends Phaser.Scene {
   }
 
   /**
-   * 대화 종료
+   * 대화 종료 - HP/MP 전체 회복
    */
   private endDialog(): void {
     this.dialogBox.hide();
     this.isInDialog = false;
+
+    // HP/MP 전체 회복
+    const prevHp = this.playerStats.hp;
+    const prevMp = this.playerStats.mp;
+
+    this.playerStats.hp = this.playerStats.maxHp;
+    this.playerStats.mp = this.playerStats.maxMp;
+
+    // UI 업데이트
+    this.statusUI.update({
+      hp: this.playerStats.hp,
+      maxHp: this.playerStats.maxHp,
+      mp: this.playerStats.mp,
+      maxMp: this.playerStats.maxMp,
+      attack: this.playerStats.attack,
+      defense: this.playerStats.defense,
+    });
+
+    // 회복 로그
+    const healedHp = this.playerStats.hp - prevHp;
+    const healedMp = this.playerStats.mp - prevMp;
+    if (healedHp > 0 || healedMp > 0) {
+      console.log(`GameScene: Player healed! HP +${healedHp}, MP +${healedMp}`);
+    }
+
+    // 자동 저장
+    this.saveGame();
+
     console.log('GameScene: Dialog ended');
   }
 
@@ -481,8 +557,12 @@ export class GameScene extends Phaser.Scene {
     if (input.direction) {
       const moved = this.player.tryMove(input.direction as Direction);
 
-      // 이동 성공 시 랜덤 인카운터 체크 (딜레이 후)
+      // 이동 성공 시
       if (moved) {
+        // 자동 저장
+        this.saveGame();
+
+        // 랜덤 인카운터 체크 (딜레이 후)
         this.time.delayedCall(100, () => {
           this.checkRandomEncounter();
         });
