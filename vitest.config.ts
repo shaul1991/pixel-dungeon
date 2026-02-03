@@ -8,9 +8,8 @@ export default defineConfig({
     exclude: [
       'node_modules',
       'dist',
-      'src/scenes/**',
-      'src/ui/**',
-      'src/entities/**',
+      // Phaser 의존 코드는 제외하지만, 순수 로직 테스트는 허용
+      // *.test.ts 파일은 include에서 이미 포함됨
     ],
     coverage: {
       provider: 'v8',

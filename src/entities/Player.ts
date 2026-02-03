@@ -13,6 +13,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   // 충돌 체크를 위한 레이어 참조
   private wallsLayer: Phaser.Tilemaps.TilemapLayer | null = null;
 
+  // 추가 충돌 체크 콜백 (NPC, 몬스터 등)
+  private collisionCallback: ((tileX: number, tileY: number) => boolean) | null = null;
+
   constructor(scene: Phaser.Scene, tileX: number, tileY: number) {
     // 타일 좌표를 픽셀 좌표로 변환 (타일 중심)
     const pixelX = tileX * 16 + 8;
@@ -43,18 +46,27 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   /**
+   * 추가 충돌 체크 콜백 설정 (NPC, 몬스터 등)
+   * @param callback 타일 좌표를 받아 충돌 여부 반환 (true = 충돌, 이동 불가)
+   */
+  public setCollisionCallback(callback: (tileX: number, tileY: number) => boolean): void {
+    this.collisionCallback = callback;
+  }
+
+  /**
    * 지정된 타일로 이동 가능한지 확인
    */
   public canMoveTo(targetTileX: number, targetTileY: number): boolean {
-    if (!this.wallsLayer) {
-      return true;
+    // 벽 레이어 체크
+    if (this.wallsLayer) {
+      const tile = this.wallsLayer.getTileAt(targetTileX, targetTileY);
+      if (tile && tile.index !== -1) {
+        return false;
+      }
     }
 
-    // 벽 레이어에서 해당 타일 확인
-    const tile = this.wallsLayer.getTileAt(targetTileX, targetTileY);
-
-    // 타일이 있고 충돌이 설정되어 있으면 이동 불가
-    if (tile && tile.index !== -1) {
+    // 추가 충돌 체크 (NPC, 몬스터 등)
+    if (this.collisionCallback && this.collisionCallback(targetTileX, targetTileY)) {
       return false;
     }
 

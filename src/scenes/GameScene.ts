@@ -191,6 +191,11 @@ export class GameScene extends Phaser.Scene {
     this.player = new Player(this, spawnTileX, spawnTileY);
     this.player.setWallsLayer(this.wallsLayer);
 
+    // NPC/몬스터 충돌 체크 콜백 설정
+    this.player.setCollisionCallback((tileX, tileY) => {
+      return this.isBlockedByEntity(tileX, tileY);
+    });
+
     // InputController 생성
     this.inputController = new InputController(this);
 
@@ -321,6 +326,13 @@ export class GameScene extends Phaser.Scene {
 
     console.log(`GameScene: Starting battle with ${monster.getStats().name} at player pos (${playerPos.x}, ${playerPos.y})`);
     this.scene.start('BattleScene', battleData);
+  }
+
+  /**
+   * 주어진 타일 좌표에 NPC 또는 몬스터가 있는지 확인
+   */
+  private isBlockedByEntity(tileX: number, tileY: number): boolean {
+    return this.findNPCAt(tileX, tileY) !== null || this.findMonsterAt(tileX, tileY) !== null;
   }
 
   /**

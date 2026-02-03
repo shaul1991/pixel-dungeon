@@ -280,7 +280,14 @@ pixel-dungeon/
 3. 시스템 구현 (systems/)
 4. 씬 통합 (scenes/)
 5. UI 연결 (ui/)
+6. 테스트 코드 작성 (*.test.ts) ← 필수!
 ```
+
+**⚠️ 테스트 코드 작성 (필수)**:
+- 새 기능 추가 시: 해당 로직의 단위 테스트 작성
+- 버그 수정 시: 버그를 재현하는 테스트 케이스 먼저 작성, 수정 후 통과 확인
+- 테스트 대상: `systems/` 순수 로직, 유틸리티 함수, 타입 가드
+- Phaser 의존 코드는 모킹 또는 수동 테스트로 대체
 
 ### 5. 검증 (Validate)
 `[GAPEVI:VALIDATE] 시작` / `[GAPEVI:VALIDATE] 완료`
@@ -348,14 +355,37 @@ make qa         # 자동화 + 수동 테스트 안내
 
 ## 명령어
 
+### 명령어 조합 구조
+
+GAPEVI 각 단계는 개별 명령어로 실행 가능하며, 상위 명령어가 이들을 조합합니다:
+
+```
+/new-feature, /bugfix (전체 GAPEVI 사이클)
+        │
+        ├─→ /gather     → 정보 수집
+        ├─→ /analyze    → 분석 및 에이전트 선택
+        ├─→ /prioritize → 작업 분해 및 순서 결정
+        ├─→ /execute    → 구현 + 테스트 코드
+        ├─→ /verify     → 품질 검증
+        └─→ /iterate    → 문제 시 복귀
+```
+
+### GAPEVI 단계별 (개별 실행 가능)
+- `/gather` - 수집: 정보/컨텍스트 수집
+- `/analyze` - 분석: 영향 범위, 에이전트 선택
+- `/prioritize` - 우선순위: 작업 분해, 실행 순서
+- `/execute` - 실행: 코드 구현 + 테스트 작성
+- `/verify` - 검증: Quality Gate 확인
+- `/iterate` - 반복: 실패 시 해당 단계로 복귀
+
 ### 개발 (전체 GAPEVI 사이클)
-- `/new-feature` - 새 기능 개발
-- `/bugfix` - 버그 수정
+- `/new-feature` - 새 기능 개발 (= /gather → /analyze → /prioritize → /execute → /verify)
+- `/bugfix` - 버그 수정 (= /gather → /analyze → /execute → /verify)
 
 ### 부분 실행
 - `/build` - 빌드 (tsc && vite build)
 - `/dev` - 개발 서버 실행
-- `/validate` - 타입 체크 및 빌드 검증
+- `/validate` - 타입 체크 및 빌드 검증 (빠른 확인)
 
 ### QA (품질 검증)
 - `/qa` - 전체 QA 사이클 (자동화 + 수동 테스트 안내)
@@ -370,12 +400,32 @@ make qa         # 자동화 + 수동 테스트 안내
 - `/generate-sprite` - 스프라이트 생성 스크립트 실행
 - `/generate-tileset` - 타일셋 생성
 
+### 조합 사용 예시
+
+```bash
+# 전체 사이클 (권장)
+/new-feature 레벨업 시스템 추가
+
+# 단계별 수동 실행
+/gather 레벨업 시스템
+/analyze
+/prioritize
+/execute 1
+/verify
+
+# 부분 반복
+/iterate execute   # 코드 수정 후 재실행
+/verify            # 다시 검증
+```
+
 ---
 
 ## 변경 이력
 
 | 날짜 | 변경 | 담당자 |
 |------|------|--------|
+| 2026-02-03 | GAPEVI 단계별 명령어 추가 (/gather, /analyze, /prioritize, /execute, /verify, /iterate) | @claude |
+| 2026-02-03 | Execute 단계에 테스트 코드 작성 필수 추가 | @claude |
 | 2026-02-03 | Meta 시스템 추가 (/make-agent 명령어, Meta 에이전트, 템플릿) | @claude |
 | 2026-02-03 | QA 시스템 추가 (에이전트, 명령어, 시나리오, Quality Gate 업데이트) | @claude |
 | 2026-02-03 | IPE/GAPEVI 디버그 출력 추가 (시작/종료 지점) | @claude |
