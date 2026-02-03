@@ -33,6 +33,7 @@ export type BattleResult = 'win' | 'lose' | 'escape';
 export class BattleScene extends Phaser.Scene {
   private playerData!: PlayerData;
   private monsterData!: MonsterConfig;
+  private monsterMaxHp!: number; // 몬스터 원래 최대 HP 저장
   private monsterTileX!: number;
   private monsterTileY!: number;
   private playerTileX!: number;
@@ -69,6 +70,7 @@ export class BattleScene extends Phaser.Scene {
   init(data: BattleSceneData): void {
     this.playerData = { ...data.player };
     this.monsterData = { ...data.monster };
+    this.monsterMaxHp = data.monster.hp; // 원래 최대 HP 저장
     this.monsterTileX = data.monsterTileX;
     this.monsterTileY = data.monsterTileY;
     this.playerTileX = data.playerTileX;
@@ -96,7 +98,7 @@ export class BattleScene extends Phaser.Scene {
     // UI 생성
     this.battleUI = new BattleUI(this);
     this.battleUI.setMonsterName(this.monsterData.name);
-    this.battleUI.updateMonsterHp(this.monsterData.hp, this.monsterData.hp);
+    this.battleUI.updateMonsterHp(this.monsterData.hp, this.monsterMaxHp);
     this.battleUI.updatePlayerHp(this.playerData.hp, this.playerData.maxHp);
     this.battleUI.updatePlayerMp(this.playerData.mp, this.playerData.maxMp);
 
@@ -457,7 +459,7 @@ export class BattleScene extends Phaser.Scene {
 
     // 메시지 표시
     await this.battleUI.showMessage(`${this.monsterData.name}에게 ${damage}의 데미지!`, 1200);
-    this.battleUI.updateMonsterHp(this.monsterData.hp, this.monsterData.hp + damage);
+    this.battleUI.updateMonsterHp(this.monsterData.hp, this.monsterMaxHp);
 
     // 몬스터 사망 체크
     if (this.monsterData.hp <= 0) {
