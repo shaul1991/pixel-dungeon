@@ -550,7 +550,25 @@ export class BattleScene extends Phaser.Scene {
     await this.battleUI.showMessage(`${this.monsterData.name}을(를) 쓰러뜨렸다!`, 1500);
     await this.battleUI.showMessage(`${rewards.exp} 경험치, ${rewards.gold} 골드 획득!`, 1500);
 
-    this.endBattle('win');
+    // 아이템 드롭 계산 및 표시
+    const itemsData = this.cache.json.get('items') as Record<string, Item>;
+    let droppedItems: Item[] = [];
+
+    if (itemsData) {
+      const lootTable = Object.values(itemsData).map((item) => ({
+        itemId: item.id,
+        dropRate: item.dropRate || 0,
+      }));
+      droppedItems = InventorySystem.calculateLoot(lootTable, itemsData);
+
+      // 드롭된 아이템 메시지 표시
+      if (droppedItems.length > 0) {
+        const itemNames = droppedItems.map((item) => item.name).join(', ');
+        await this.battleUI.showMessage(`아이템 획득: ${itemNames}`, 1500);
+      }
+    }
+
+    this.endBattle('win', droppedItems);
   }
 
   private async handleDefeat(): Promise<void> {
@@ -566,31 +584,15 @@ export class BattleScene extends Phaser.Scene {
     this.endBattle('lose');
   }
 
-  private endBattle(result: BattleResult): void {
-    // 승리 시 아이템 드롭 처리
-    let droppedItems: Item[] = [];
+  private endBattle(result: BattleResult, droppedItems: Item[] = []): void {
     let updatedInventory = this.inventory;
 
-    if (result === 'win') {
-      // 아이템 데이터 로드
-      const itemsData = this.cache.json.get('items') as Record<string, Item>;
-
-      if (itemsData) {
-        // 모든 아이템을 루트 테이블로 변환
-        const lootTable = Object.values(itemsData).map((item) => ({
-          itemId: item.id,
-          dropRate: item.dropRate || 0,
-        }));
-
-        // 드롭 계산
-        droppedItems = InventorySystem.calculateLoot(lootTable, itemsData);
-
-        // 드롭된 아이템을 인벤토리에 추가
-        for (const item of droppedItems) {
-          const addResult = InventorySystem.addItem(updatedInventory, item, 1);
-          updatedInventory = addResult.inventory;
-          console.log(`BattleScene: Item dropped - ${item.name}`);
-        }
+    // 드롭된 아이템을 인벤토리에 추가
+    if (result === 'win' && droppedItems.length > 0) {
+      for (const item of droppedItems) {
+        const addResult = InventorySystem.addItem(updatedInventory, item, 1);
+        updatedInventory = addResult.inventory;
+        console.log(`BattleScene: Item dropped - ${item.name}`);
       }
     }
 
