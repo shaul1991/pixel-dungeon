@@ -224,6 +224,9 @@ export class GameScene extends Phaser.Scene {
       exp: initialStats.exp,
       gold: 0,
     };
+
+    // 인벤토리 초기화
+    this.inventory = [];
   }
 
   create(): void {
@@ -240,6 +243,11 @@ export class GameScene extends Phaser.Scene {
 
     // 아이템 데이터 로드
     this.itemsData = this.cache.json.get('items');
+
+    // 새 게임 시작 시 스타터 아이템 지급
+    if (this.inventory.length === 0 && this.itemsData) {
+      this.addStarterItems();
+    }
 
     this.createTilemap();
     this.createPlayer();
@@ -303,6 +311,25 @@ export class GameScene extends Phaser.Scene {
   private saveGame(): void {
     const pos = this.player.getTilePosition();
     SaveSystem.save(pos.x, pos.y, this.playerStats, this.inventory);
+  }
+
+  /**
+   * 새 게임 시작 시 스타터 아이템 지급
+   */
+  private addStarterItems(): void {
+    const starterItems = [
+      { id: 'health_potion_small', quantity: 2 },
+      { id: 'mana_potion_small', quantity: 2 },
+    ];
+
+    for (const starterItem of starterItems) {
+      const item = this.itemsData[starterItem.id];
+      if (item) {
+        const result = InventorySystem.addItem(this.inventory, item, starterItem.quantity);
+        this.inventory = result.inventory;
+        console.log(`GameScene: Added starter item - ${result.result.message}`);
+      }
+    }
   }
 
   private createTilemap(): void {

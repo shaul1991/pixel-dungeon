@@ -115,6 +115,7 @@ export interface Item {
   quantity: number;
   stats?: Partial<Stats>;
   effect?: ItemEffect;
+  dropRate?: number; // 몬스터 처치 시 드롭 확률 (0-1)
 }
 
 /** Inventory item (Item with quantity tracking) */

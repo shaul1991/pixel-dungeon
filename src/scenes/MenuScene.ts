@@ -120,8 +120,8 @@ export class MenuScene extends Phaser.Scene {
     });
     versionText.setOrigin(1, 1);
 
-    // 조작 안내 (화살표 키 추가)
-    const controlsText = this.add.text(8, height - 8, '↑↓: Select  Enter/Space: Confirm', {
+    // 조작 안내
+    const controlsText = this.add.text(8, height - 8, '↑↓: Select  Z: Confirm', {
       ...createPixelTextStyle('small', PixelColorStrings.textDark),
     });
     controlsText.setOrigin(0, 1);

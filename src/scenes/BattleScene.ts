@@ -4,7 +4,7 @@ import { BattleUI } from '../ui/BattleUI';
 import { BattleSystem } from '../systems/BattleSystem';
 import { InventorySystem } from '../systems/InventorySystem';
 import type { MonsterConfig } from '../entities/Monster';
-import type { InventoryItem } from '../types';
+import type { InventoryItem, Item } from '../types';
 
 export interface PlayerData {
   hp: number;
@@ -567,6 +567,33 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private endBattle(result: BattleResult): void {
+    // 승리 시 아이템 드롭 처리
+    let droppedItems: Item[] = [];
+    let updatedInventory = this.inventory;
+
+    if (result === 'win') {
+      // 아이템 데이터 로드
+      const itemsData = this.cache.json.get('items') as Record<string, Item>;
+
+      if (itemsData) {
+        // 모든 아이템을 루트 테이블로 변환
+        const lootTable = Object.values(itemsData).map((item) => ({
+          itemId: item.id,
+          dropRate: item.dropRate || 0,
+        }));
+
+        // 드롭 계산
+        droppedItems = InventorySystem.calculateLoot(lootTable, itemsData);
+
+        // 드롭된 아이템을 인벤토리에 추가
+        for (const item of droppedItems) {
+          const addResult = InventorySystem.addItem(updatedInventory, item, 1);
+          updatedInventory = addResult.inventory;
+          console.log(`BattleScene: Item dropped - ${item.name}`);
+        }
+      }
+    }
+
     // 결과 데이터 전달
     const resultData = {
       result,
@@ -578,8 +605,10 @@ export class BattleScene extends Phaser.Scene {
       // 플레이어 위치 복원용
       playerTileX: this.playerTileX,
       playerTileY: this.playerTileY,
-      // 전투 후 인벤토리 상태
-      inventory: this.inventory,
+      // 전투 후 인벤토리 상태 (드롭 아이템 포함)
+      inventory: updatedInventory,
+      // 드롭된 아이템 정보
+      droppedItems: droppedItems.length > 0 ? droppedItems : null,
     };
 
     if (result === 'lose') {
